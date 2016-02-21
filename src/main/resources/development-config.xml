@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                      http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+    <import resource="common-config.xml"/>
+
+    <bean id="connectionFactory" class="edu.mit.puzzle.cube.core.db.InMemoryConnectionFactory">
+        <constructor-arg name="visibilityStatusSet" ref="visibilityStatusSet"/>
+        <constructor-arg name="teamIdList" ref="teamList"/>
+        <constructor-arg name="puzzleIdList" ref="puzzleList"/>
+    </bean>
+
+</beans>

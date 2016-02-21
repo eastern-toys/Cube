@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                      http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+    <bean id="puzzleList" class="java.util.ArrayList">
+        <constructor-arg>
+            <list>
+                <value>dog_show</value>
+                <value>you_complete_me</value>
+                <value>spot_the_dog</value>
+                <value>dog_food</value>
+                <value>road_trip</value>
+                <value>pictocryptolists</value>
+                <value>paddywhack</value>
+
+                <value>rip_van_winkle</value>
+                <value>crimes_against_cruciverbalism</value>
+
+                <value>sleeping_beauty</value>
+                <value>the_fire_swamp</value>
+
+                <value>opus</value>
+                <value>behind_the_music</value>
+
+                <value>king_arthur</value>
+                <value>quest_for_the_truth</value>
+
+                <value>ysera</value>
+                <value>cannery</value>
+
+                <value>dreamtime</value>
+                <value>dreamtime_day_one</value>
+                <value>the_sound_of_silence</value>
+                <value>dreamtime_day_two</value>
+                <value>vocabulary_quiz</value>
+                <value>dreamtime_day_three</value>
+                <value>who</value>
+                <value>dreamtime_day_four</value>
+                <value>so_smart</value>
+                <value>dreamtime_day_five</value>
+                <value>missing_the_mark</value>
+
+                <value>pam_ewing</value>
+                <value>a_most_congenial_odyssey</value>
+
+                <value>randolph_carter</value>
+                <value>the_eldritch_gambrel_scavenger_hunt</value>
+
+                <value>sleeping_gypsy</value>
+                <value>disappointment</value>
+
+                <value>endymion</value>
+                <value>gravitational_pull</value>
+
+                <value>limbo</value>
+                <value>rip_van_winkle_fragment</value>
+            </list>
+        </constructor-arg>
+    </bean>
+
+    <bean id="visibilityStatusSet" class="edu.mit.puzzle.cube.modules.model.StandardVisibilityStatusSet"/>
+    <bean id="eventFactory" class="edu.mit.puzzle.cube.core.events.CoreEventFactory"/>
+
+    <bean id="coreEventProcessor" class="edu.mit.puzzle.cube.core.events.CompositeEventProcessor">
+        <property name="eventProcessors">
+            <list>
+                <ref bean="setToSolvedOnCorrectSubmission"/>
+                <ref bean="huntUnlocker"/>
+            </list>
+        </property>
+    </bean>
+
+    <bean id="setToSolvedOnCorrectSubmission" class="edu.mit.puzzle.cube.modules.events.SetToSolvedOnCorrectSubmission">
+        <constructor-arg name="huntStatusStore" ref="huntStatusStore"/>
+    </bean>
+    <bean id="huntUnlocker" class="edu.mit.puzzle.cube.huntimpl.huntception.HuntceptionUnlockEventProcessor">
+        <constructor-arg name="huntStatusStore" ref="huntStatusStore"/>
+    </bean>
+
+</beans>

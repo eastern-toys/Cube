@@ -1,0 +1,110 @@
+package edu.mit.puzzle.cube.core.model;
+
+import com.google.common.collect.Lists;
+import edu.mit.puzzle.cube.core.AdjustableClock;
+import edu.mit.puzzle.cube.core.db.ConnectionFactory;
+import edu.mit.puzzle.cube.core.db.InMemorySingleUnsharedConnectionFactory;
+import edu.mit.puzzle.cube.core.events.Event;
+import edu.mit.puzzle.cube.core.events.EventProcessor;
+import edu.mit.puzzle.cube.modules.model.StandardVisibilityStatusSet;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.sql.SQLException;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.*;
+
+public class SubmissionStoreTest {
+
+    private ConnectionFactory connectionFactory;
+    private AdjustableClock clock;
+    private SubmissionStore submissionStore;
+    private EventProcessor eventProcessor;
+
+    private static String TEST_TEAM_ID = "testerteam";
+    private static String TEST_PUZZLE_ID = "a_test_puzzle";
+
+    @Before
+    public void setup() throws SQLException {
+        connectionFactory = new InMemorySingleUnsharedConnectionFactory(
+                new StandardVisibilityStatusSet(),
+                Lists.newArrayList(TEST_TEAM_ID),
+                Lists.newArrayList(TEST_PUZZLE_ID));
+        clock = new AdjustableClock(Clock.fixed(Instant.now(), ZoneId.of("UTC")));
+        eventProcessor = mock(EventProcessor.class);
+
+        submissionStore = new SubmissionStore(connectionFactory, clock, eventProcessor);
+    }
+
+    @Test
+    public void testAddAndGetSingleSubmission() {
+        submissionStore.addSubmission(TEST_TEAM_ID,TEST_PUZZLE_ID,"guess1");
+
+        List<Submission> submissions = submissionStore.getAllSubmissions();
+        assertEquals(1, submissions.size());
+        assertEquals(1, submissions.get(0).getSubmissionId());
+        assertEquals(TEST_TEAM_ID, submissions.get(0).getTeamId());
+        assertEquals(TEST_PUZZLE_ID, submissions.get(0).getPuzzleId());
+        assertEquals("guess1", submissions.get(0).getSubmissionText());
+        assertEquals(SubmissionStatus.getDefault(), submissions.get(0).getStatus());
+        assertEquals(clock.instant(), submissions.get(0).getTimestamp());
+
+        Submission submission = submissionStore.getSubmission(1).get();
+        assertEquals(1, submission.getSubmissionId());
+        assertEquals(TEST_TEAM_ID, submission.getTeamId());
+        assertEquals(TEST_PUZZLE_ID, submission.getPuzzleId());
+        assertEquals("guess1", submission.getSubmissionText());
+        assertEquals(SubmissionStatus.getDefault(), submission.getStatus());
+        assertEquals(clock.instant(), submission.getTimestamp());
+
+        verifyZeroInteractions(eventProcessor);
+    }
+
+    @Test
+    public void testAddAndGetMultipleSubmissions() {
+        Instant firstInstant = clock.instant();
+        submissionStore.addSubmission(TEST_TEAM_ID,TEST_PUZZLE_ID,"guess1");
+
+        clock.setWrappedClock(Clock.fixed(clock.instant().plus(5, ChronoUnit.MINUTES), clock.getZone()));
+        Instant secondInstant = clock.instant();
+        submissionStore.addSubmission(TEST_TEAM_ID,TEST_PUZZLE_ID, "guess2");
+
+        List<Submission> submissions = submissionStore.getAllSubmissions();
+        assertEquals(2, submissions.size());
+        assertEquals(1, submissions.get(0).getSubmissionId());
+        assertEquals("guess1", submissions.get(0).getSubmissionText());
+        assertEquals(firstInstant, submissions.get(0).getTimestamp());
+        assertEquals(2, submissions.get(1).getSubmissionId());
+        assertEquals("guess2", submissions.get(1).getSubmissionText());
+        assertEquals(secondInstant, submissions.get(1).getTimestamp());
+
+        verifyZeroInteractions(eventProcessor);
+    }
+
+    @Test
+    public void testUpdateSubmissionStatus() {
+        submissionStore.addSubmission(TEST_TEAM_ID, TEST_PUZZLE_ID, "guess1");
+        Submission submission = submissionStore.getSubmission(1).get();
+        assertEquals(SubmissionStatus.SUBMITTED, submission.getStatus());
+
+        submissionStore.setSubmissionStatus(1, SubmissionStatus.ASSIGNED);
+        submission = submissionStore.getSubmission(1).get();
+        assertEquals(SubmissionStatus.ASSIGNED, submission.getStatus());
+
+        verifyZeroInteractions(eventProcessor);
+
+        submissionStore.setSubmissionStatus(1, SubmissionStatus.CORRECT);
+        submission = submissionStore.getSubmission(1).get();
+        assertEquals(SubmissionStatus.CORRECT, submission.getStatus());
+
+        verify(eventProcessor, times(1)).process(any(Event.class));
+    }
+
+}
