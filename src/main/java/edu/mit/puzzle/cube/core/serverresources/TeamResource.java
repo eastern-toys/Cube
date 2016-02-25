@@ -11,14 +11,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class TeamResource extends AbstractCubeResource {
 
-    private HuntStatusStore huntStatusStore;
-
-    public TeamResource(
-        HuntStatusStore huntStatusStore
-    ) {
-        this.huntStatusStore = checkNotNull(huntStatusStore);
-    }
-
     private String getId() {
         String idString = (String) getRequest().getAttributes().get("id");
         if (idString == null) {

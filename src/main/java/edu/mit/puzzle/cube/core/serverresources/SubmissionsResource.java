@@ -15,17 +15,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class SubmissionsResource extends AbstractCubeResource {
 
-    private SubmissionStore submissionStore;
-    private HuntStatusStore huntStatusStore;
-
-    public SubmissionsResource(
-            SubmissionStore submissionStore,
-            HuntStatusStore huntStatusStore
-    ) {
-        this.submissionStore = checkNotNull(submissionStore);
-        this.huntStatusStore = checkNotNull(huntStatusStore);
-    }
-
     public String handleGet() throws JsonProcessingException {
 
         List<Submission> submissions = submissionStore.getAllSubmissions();

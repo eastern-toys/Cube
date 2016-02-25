@@ -2,8 +2,27 @@ package edu.mit.puzzle.cube.core.exampleruns;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
+import edu.mit.puzzle.cube.core.Cube2Application;
+import edu.mit.puzzle.cube.core.db.ConnectionFactory;
+import edu.mit.puzzle.cube.core.db.InMemoryConnectionFactory;
+import edu.mit.puzzle.cube.core.events.CompositeEventProcessor;
+import edu.mit.puzzle.cube.core.events.CoreEventFactory;
+import edu.mit.puzzle.cube.core.events.EventFactory;
+import edu.mit.puzzle.cube.core.events.EventProcessor;
+import edu.mit.puzzle.cube.core.model.HuntStatusStore;
+import edu.mit.puzzle.cube.core.model.Submission;
+import edu.mit.puzzle.cube.core.model.SubmissionStore;
+import edu.mit.puzzle.cube.core.model.VisibilityStatusSet;
+import edu.mit.puzzle.cube.core.serverresources.*;
+import edu.mit.puzzle.cube.huntimpl.linearexample.LinearExampleUnlockEventProcessor;
+import edu.mit.puzzle.cube.modules.events.SetToSolvedOnCorrectSubmission;
+import edu.mit.puzzle.cube.modules.model.StandardVisibilityStatusSet;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
+import org.restlet.Context;
 import org.restlet.Request;
 import org.restlet.Response;
 import org.restlet.data.Method;
@@ -15,9 +34,16 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class LinearHuntRunTest {
 
@@ -26,11 +52,56 @@ public class LinearHuntRunTest {
 
     @Before
     public void setup() throws Exception {
-        String contextLaunchPoint = "linear-example-unit-test-config.xml";
+        VisibilityStatusSet visibilityStatusSet = new StandardVisibilityStatusSet();
+        List<String> teamIdList = Lists.newArrayList("testerteam");
+        teamIdList.addAll(IntStream.rangeClosed(2,70).mapToObj(i -> "testerteam" + i).collect(Collectors.toList()));
+        List<String> puzzleIdList = Lists.newArrayList(
+                IntStream.rangeClosed(1,7).mapToObj(i -> "puzzle" + i).collect(Collectors.toList())
+        );
 
-        ApplicationContext springContext = new ClassPathXmlApplicationContext(contextLaunchPoint);
+        ConnectionFactory connectionFactory = new InMemoryConnectionFactory(
+                visibilityStatusSet,
+                teamIdList,
+                puzzleIdList
+        );
 
-        router = (SpringRouter) springContext.getBean("root");
+        EventFactory eventFactory = new CoreEventFactory();
+        CompositeEventProcessor eventProcessor = new CompositeEventProcessor();
+        SubmissionStore submissionStore = new SubmissionStore(
+                connectionFactory,
+                eventProcessor
+        );
+        HuntStatusStore huntStatusStore = new HuntStatusStore(
+                connectionFactory,
+                visibilityStatusSet,
+                eventProcessor
+        );
+
+        EventProcessor setToSolvedOnCorrectSubmission = new SetToSolvedOnCorrectSubmission(huntStatusStore);
+        EventProcessor linearExampleUnlocker = new LinearExampleUnlockEventProcessor(huntStatusStore);
+        eventProcessor.setEventProcessors(Lists.newArrayList(
+                setToSolvedOnCorrectSubmission,
+                linearExampleUnlocker
+        ));
+
+        Context context = mock(Context.class, Mockito.RETURNS_SMART_NULLS);
+        when(context.getAttributes()).thenReturn(new ConcurrentHashMap<>(
+                ImmutableMap.of(
+                        AbstractCubeResource.SUBMISSION_STORE_KEY, submissionStore,
+                        AbstractCubeResource.HUNT_STATUS_STORE_KEY, huntStatusStore,
+                        AbstractCubeResource.EVENT_PROCESSOR_KEY, eventProcessor,
+                        AbstractCubeResource.EVENT_FACTORY_KEY, eventFactory
+                )));
+        Logger logger = mock(Logger.class, Mockito.RETURNS_SMART_NULLS);
+        when(context.getLogger()).thenReturn(logger);
+
+        router = new Router(context);
+        router.attach("/submissions", SubmissionsResource.class);
+        router.attach("/submissions/{id}", SubmissionResource.class);
+        router.attach("/visibilities", VisibilitiesResource.class);
+        router.attach("/visibilities/{teamId}/{puzzleId}", VisibilityResource.class);
+        router.attach("/events", EventsResource.class);
+        router.attach("/teams/{id}", TeamResource.class);
     }
 
     private JsonNode getAllSubmissions() throws IOException {

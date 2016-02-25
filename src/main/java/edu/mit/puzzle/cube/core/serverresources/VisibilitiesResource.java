@@ -13,14 +13,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class VisibilitiesResource extends AbstractCubeResource {
 
-    private HuntStatusStore huntStatusStore;
-
-    public VisibilitiesResource(
-            HuntStatusStore huntStatusStore
-    ) {
-        this.huntStatusStore = checkNotNull(huntStatusStore);
-    }
-
     public String handleGet() throws JsonProcessingException {
         Optional<String> teamId = Optional.ofNullable(getQueryValue("teamId"));
         Optional<String> puzzleId = Optional.ofNullable(getQueryValue("puzzleId"));
