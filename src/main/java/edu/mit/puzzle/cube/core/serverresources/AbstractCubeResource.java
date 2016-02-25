@@ -33,8 +33,6 @@ public abstract class AbstractCubeResource extends ServerResource {
     }
 
     public void doInit() {
-        System.out.println("doInit");
-        System.out.println(getContext());
         this.submissionStore = (SubmissionStore) getContext().getAttributes().get(SUBMISSION_STORE_KEY);
         this.huntStatusStore = (HuntStatusStore) getContext().getAttributes().get(HUNT_STATUS_STORE_KEY);
         this.eventFactory = (EventFactory) getContext().getAttributes().get(EVENT_FACTORY_KEY);

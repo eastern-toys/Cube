@@ -14,14 +14,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class VisibilityResource extends AbstractCubeResource {
 
-    private HuntStatusStore huntStatusStore;
-
-    public VisibilityResource(
-            HuntStatusStore huntStatusStore
-    ) {
-        this.huntStatusStore = checkNotNull(huntStatusStore);
-    }
-
     private String getTeamId() {
         String idString = (String) getRequest().getAttributes().get("teamId");
         if (idString == null) {

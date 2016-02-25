@@ -20,14 +20,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class SubmissionResource extends AbstractCubeResource {
 
-    private SubmissionStore submissionStore;
-
-    public SubmissionResource(
-            SubmissionStore submissionStore
-    ) {
-        this.submissionStore = checkNotNull(submissionStore);
-    }
-
     private int getId() {
         String idString = (String) getRequest().getAttributes().get("id");
         if (idString == null) {

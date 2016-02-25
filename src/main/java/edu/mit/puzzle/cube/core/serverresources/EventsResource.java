@@ -16,18 +16,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class EventsResource extends AbstractCubeResource {
 
-    private final EventFactory eventFactory;
-    private final EventProcessor eventProcessor;
-
-    public EventsResource(
-            EventFactory eventFactory,
-            EventProcessor eventProcessor
-    ) {
-        this.eventFactory = checkNotNull(eventFactory);
-        this.eventProcessor = checkNotNull(eventProcessor);
-    }
-
-
     @Override
     protected String handleGet() throws JsonProcessingException {
         return "";
