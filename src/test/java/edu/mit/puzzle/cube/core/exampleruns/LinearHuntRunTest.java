@@ -8,7 +8,6 @@ import edu.mit.puzzle.cube.core.db.ConnectionFactory;
 import edu.mit.puzzle.cube.core.environments.DevelopmentEnvironment;
 import edu.mit.puzzle.cube.core.environments.ServiceEnvironment;
 import edu.mit.puzzle.cube.core.events.CompositeEventProcessor;
-import edu.mit.puzzle.cube.core.events.CoreEventFactory;
 import edu.mit.puzzle.cube.core.events.EventFactory;
 import edu.mit.puzzle.cube.core.model.HuntStatusStore;
 import edu.mit.puzzle.cube.core.model.SubmissionStore;
@@ -46,7 +45,7 @@ public class LinearHuntRunTest {
 
         ConnectionFactory connectionFactory = serviceEnvironment.getConnectionFactory();
 
-        EventFactory eventFactory = new CoreEventFactory();
+        EventFactory eventFactory = new EventFactory();
         CompositeEventProcessor eventProcessor = new CompositeEventProcessor();
         SubmissionStore submissionStore = new SubmissionStore(
                 connectionFactory,

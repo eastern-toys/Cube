@@ -1,6 +1,5 @@
 package edu.mit.puzzle.cube.core.events;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
 import java.util.List;

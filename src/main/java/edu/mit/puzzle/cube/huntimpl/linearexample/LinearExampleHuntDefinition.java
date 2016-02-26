@@ -51,11 +51,10 @@ public class LinearExampleHuntDefinition implements HuntDefinition {
             HuntStatusStore huntStatusStore
     ) {
         eventProcessor.addEventProcessor(event -> {
-            if (!SubmissionCompleteEvent.class.isInstance(event)) {
+            if (!event.getEventType().equals("SubmissionComplete")) {
                 return;
             }
-            SubmissionCompleteEvent scEvent = (SubmissionCompleteEvent) event;
-            Submission submission = scEvent.getSubmission();
+            Submission submission = (Submission) event.getAttribute("submission");
             if (submission.getStatus().equals(SubmissionStatus.CORRECT)) {
                 huntStatusStore.setVisibility(
                         submission.getTeamId(),
@@ -67,11 +66,11 @@ public class LinearExampleHuntDefinition implements HuntDefinition {
         });
 
         eventProcessor.addEventProcessor(event -> {
-            if (!FullReleaseEvent.class.isInstance(event)) {
+            if (!event.getEventType().equals("FullRelease")) {
                 return;
             }
-            String runId = ((FullReleaseEvent) event).getRunId();
-            String puzzleId = ((FullReleaseEvent) event).getPuzzleId();
+            String runId = (String) event.getAttribute("runId");
+            String puzzleId = (String) event.getAttribute("puzzleId");
             for (String teamId : huntStatusStore.getTeamIds(runId)) {
                 huntStatusStore.setVisibility(
                         teamId,
@@ -83,23 +82,25 @@ public class LinearExampleHuntDefinition implements HuntDefinition {
         });
 
         eventProcessor.addEventProcessor(event -> {
-            if (!HuntStartEvent.class.isInstance(event)) {
+            if (!event.getEventType().equals("HuntStart")) {
                 return;
             }
-            for (String teamId : huntStatusStore.getTeamIds(((HuntStartEvent) event).getRunId())) {
+            for (String teamId : huntStatusStore.getTeamIds((String) event.getAttribute("runId"))) {
                 huntStatusStore.setVisibility(teamId, "puzzle1", "UNLOCKED", false);
             }
         });
 
         for (Map.Entry<String,String> directPrereqEntry : DIRECT_UNLOCK_PREREQS.entrySet()) {
             eventProcessor.addEventProcessor(event -> {
-                if (!VisibilityChangeEvent.class.isInstance(event)) {
+                if (!event.getEventType().equals("VisibilityChange")) {
                     return;
                 }
-                VisibilityChangeEvent vcEvent = (VisibilityChangeEvent) event;
-                if (vcEvent.getVisibilityStatus().equals("SOLVED") &&
-                        vcEvent.getPuzzleId().equals(directPrereqEntry.getKey())) {
-                    huntStatusStore.setVisibility(vcEvent.getTeamId(), directPrereqEntry.getValue(),
+                String teamId = (String) event.getAttribute("teamId");
+                String puzzleId = (String) event.getAttribute("puzzleId");
+                String status = (String) event.getAttribute("status");
+
+                if (status.equals("SOLVED") && puzzleId.equals(directPrereqEntry.getKey())) {
+                    huntStatusStore.setVisibility(teamId, directPrereqEntry.getValue(),
                             "UNLOCKED", false);
                 }
             });
