@@ -20,14 +20,14 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-public class Cube2Application extends Application {
+public class CubeApplication extends Application {
 
     private final SubmissionStore submissionStore;
     private final HuntStatusStore huntStatusStore;
     private final EventFactory eventFactory;
     private final CompositeEventProcessor eventProcessor;
 
-    public Cube2Application() throws SQLException {
+    public CubeApplication() throws SQLException {
         VisibilityStatusSet visibilityStatusSet = new StandardVisibilityStatusSet();
         List<String> teamIdList = Lists.newArrayList("testerteam");
         teamIdList.addAll(IntStream.rangeClosed(2,70).mapToObj(i -> "testerteam" + i).collect(Collectors.toList()));
@@ -91,7 +91,7 @@ public class Cube2Application extends Application {
         component.getServers().add(Protocol.HTTP, 8182);
 
         // Attach this application.
-        component.getDefaultHost().attach("", new Cube2Application());
+        component.getDefaultHost().attach("", new CubeApplication());
 
         // Start the component.
         component.start();
