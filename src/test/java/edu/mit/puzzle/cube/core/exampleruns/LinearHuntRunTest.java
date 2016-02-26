@@ -3,20 +3,17 @@ package edu.mit.puzzle.cube.core.exampleruns;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
+import edu.mit.puzzle.cube.core.HuntDefinition;
 import edu.mit.puzzle.cube.core.db.ConnectionFactory;
-import edu.mit.puzzle.cube.core.db.InMemoryConnectionFactory;
+import edu.mit.puzzle.cube.core.environments.DevelopmentEnvironment;
+import edu.mit.puzzle.cube.core.environments.ServiceEnvironment;
 import edu.mit.puzzle.cube.core.events.CompositeEventProcessor;
 import edu.mit.puzzle.cube.core.events.CoreEventFactory;
 import edu.mit.puzzle.cube.core.events.EventFactory;
-import edu.mit.puzzle.cube.core.events.EventProcessor;
 import edu.mit.puzzle.cube.core.model.HuntStatusStore;
 import edu.mit.puzzle.cube.core.model.SubmissionStore;
-import edu.mit.puzzle.cube.core.model.VisibilityStatusSet;
 import edu.mit.puzzle.cube.core.serverresources.*;
-import edu.mit.puzzle.cube.huntimpl.linearexample.LinearExampleUnlockEventProcessor;
-import edu.mit.puzzle.cube.modules.events.SetToSolvedOnCorrectSubmission;
-import edu.mit.puzzle.cube.modules.model.StandardVisibilityStatusSet;
+import edu.mit.puzzle.cube.huntimpl.linearexample.LinearExampleHuntDefinition;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -29,11 +26,8 @@ import org.restlet.representation.Representation;
 import org.restlet.routing.Router;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -47,18 +41,10 @@ public class LinearHuntRunTest {
 
     @Before
     public void setup() throws Exception {
-        VisibilityStatusSet visibilityStatusSet = new StandardVisibilityStatusSet();
-        List<String> teamIdList = Lists.newArrayList("testerteam");
-        teamIdList.addAll(IntStream.rangeClosed(2,70).mapToObj(i -> "testerteam" + i).collect(Collectors.toList()));
-        List<String> puzzleIdList = Lists.newArrayList(
-                IntStream.rangeClosed(1,7).mapToObj(i -> "puzzle" + i).collect(Collectors.toList())
-        );
+        HuntDefinition huntDefinition = new LinearExampleHuntDefinition();
+        ServiceEnvironment serviceEnvironment = new DevelopmentEnvironment(huntDefinition);
 
-        ConnectionFactory connectionFactory = new InMemoryConnectionFactory(
-                visibilityStatusSet,
-                teamIdList,
-                puzzleIdList
-        );
+        ConnectionFactory connectionFactory = serviceEnvironment.getConnectionFactory();
 
         EventFactory eventFactory = new CoreEventFactory();
         CompositeEventProcessor eventProcessor = new CompositeEventProcessor();
@@ -68,16 +54,11 @@ public class LinearHuntRunTest {
         );
         HuntStatusStore huntStatusStore = new HuntStatusStore(
                 connectionFactory,
-                visibilityStatusSet,
+                huntDefinition.getVisibilityStatusSet(),
                 eventProcessor
         );
 
-        EventProcessor setToSolvedOnCorrectSubmission = new SetToSolvedOnCorrectSubmission(huntStatusStore);
-        EventProcessor linearExampleUnlocker = new LinearExampleUnlockEventProcessor(huntStatusStore);
-        eventProcessor.setEventProcessors(Lists.newArrayList(
-                setToSolvedOnCorrectSubmission,
-                linearExampleUnlocker
-        ));
+        huntDefinition.addToEventProcessor(eventProcessor, huntStatusStore);
 
         Context context = mock(Context.class, Mockito.RETURNS_SMART_NULLS);
         when(context.getAttributes()).thenReturn(new ConcurrentHashMap<>(
