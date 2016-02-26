@@ -1,5 +1,6 @@
 package edu.mit.puzzle.cube.core.model;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Table;
@@ -7,7 +8,6 @@ import edu.mit.puzzle.cube.core.db.ConnectionFactory;
 import edu.mit.puzzle.cube.core.db.DatabaseHelper;
 import edu.mit.puzzle.cube.core.events.Event;
 import edu.mit.puzzle.cube.core.events.EventProcessor;
-import edu.mit.puzzle.cube.core.events.SubmissionCompleteEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -112,7 +112,8 @@ public class SubmissionStore {
 
         if (updated && status.isTerminal()) {
             Submission submission = this.getSubmission(submissionId).get();
-            eventProcessor.process(new SubmissionCompleteEvent(submission));
+            eventProcessor.process(new Event("SubmissionComplete",
+                    ImmutableMap.of("submission", submission)));
         }
 
         return updated;

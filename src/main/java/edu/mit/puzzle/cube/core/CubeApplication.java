@@ -4,7 +4,6 @@ import edu.mit.puzzle.cube.core.db.ConnectionFactory;
 import edu.mit.puzzle.cube.core.environments.DevelopmentEnvironment;
 import edu.mit.puzzle.cube.core.environments.ServiceEnvironment;
 import edu.mit.puzzle.cube.core.events.CompositeEventProcessor;
-import edu.mit.puzzle.cube.core.events.CoreEventFactory;
 import edu.mit.puzzle.cube.core.events.EventFactory;
 import edu.mit.puzzle.cube.core.model.HuntStatusStore;
 import edu.mit.puzzle.cube.core.model.SubmissionStore;
@@ -31,7 +30,7 @@ public class CubeApplication extends Application {
 
         ConnectionFactory connectionFactory = serviceEnvironment.getConnectionFactory();
 
-        eventFactory = new CoreEventFactory();
+        eventFactory = new EventFactory();
         eventProcessor = new CompositeEventProcessor();
         submissionStore = new SubmissionStore(
                 connectionFactory,

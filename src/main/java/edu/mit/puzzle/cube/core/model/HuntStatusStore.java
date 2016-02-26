@@ -6,7 +6,6 @@ import edu.mit.puzzle.cube.core.db.ConnectionFactory;
 import edu.mit.puzzle.cube.core.db.DatabaseHelper;
 import edu.mit.puzzle.cube.core.events.Event;
 import edu.mit.puzzle.cube.core.events.EventProcessor;
-import edu.mit.puzzle.cube.core.events.VisibilityChangeEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -251,7 +250,12 @@ public class HuntStatusStore {
                     "INSERT INTO visibility_history (teamId, puzzleId, status, timestamp) VALUES (?, ?, ?, ?)",
                     Lists.newArrayList(teamId, puzzleId, status, clock.instant()));
 
-            Event changeEvent = new VisibilityChangeEvent(teamId, puzzleId, status, isExternallyInitiated);
+            Event changeEvent = new Event(
+                    "VisibilityChange",
+                    ImmutableMap.of(
+                            "teamId", teamId,
+                            "puzzleId", puzzleId,
+                            "status", status));
             eventProcessor.process(changeEvent);
 
             return true;

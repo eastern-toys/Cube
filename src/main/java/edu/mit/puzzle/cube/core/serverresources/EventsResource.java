@@ -3,16 +3,11 @@ package edu.mit.puzzle.cube.core.serverresources;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.ImmutableMap;
 import edu.mit.puzzle.cube.core.events.Event;
-import edu.mit.puzzle.cube.core.events.EventFactory;
-import edu.mit.puzzle.cube.core.events.EventProcessor;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.restlet.ext.json.JsonRepresentation;
 
 import java.io.IOException;
-import java.util.Optional;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 public class EventsResource extends AbstractCubeResource {
 
@@ -25,14 +20,10 @@ public class EventsResource extends AbstractCubeResource {
     protected String handlePost(JsonRepresentation representation) throws JsonProcessingException {
         try {
             JSONObject obj = representation.getJsonObject();
-            Optional<Event> event = eventFactory.generateEvent(obj.toString());
+            Event event = eventFactory.generate(obj.toString());
 
-            if (event.isPresent()) {
-                eventProcessor.process(event.get());
-                return MAPPER.writeValueAsString(ImmutableMap.of("processed",true));
-            } else {
-                return MAPPER.writeValueAsString(ImmutableMap.of("processed",false));
-            }
+            eventProcessor.process(event);
+            return MAPPER.writeValueAsString(ImmutableMap.of("processed",true));
 
         } catch (IOException e) {
             throw new RuntimeException(e);
