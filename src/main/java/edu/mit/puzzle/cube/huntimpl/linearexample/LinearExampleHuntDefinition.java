@@ -85,8 +85,12 @@ public class LinearExampleHuntDefinition implements HuntDefinition {
             if (!event.getEventType().equals("HuntStart")) {
                 return;
             }
-            for (String teamId : huntStatusStore.getTeamIds((String) event.getAttribute("runId"))) {
-                huntStatusStore.setVisibility(teamId, "puzzle1", "UNLOCKED", false);
+            String runId = (String) event.getAttribute("runId");
+            boolean changed = huntStatusStore.recordHuntRunStart(runId);
+            if (changed) {
+                for (String teamId : huntStatusStore.getTeamIds(runId)) {
+                    huntStatusStore.setVisibility(teamId, "puzzle1", "UNLOCKED", false);
+                }
             }
         });
 
