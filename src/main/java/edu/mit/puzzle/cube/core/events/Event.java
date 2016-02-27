@@ -12,6 +12,10 @@ public class Event {
     private final String eventType;
     private final Map<String,Object> attributes;
 
+    public Event(String eventType) {
+        this(eventType, ImmutableMap.<String, Object>of());
+    }
+
     public Event(String eventType, Map<String, Object> attributes) {
         this.eventType = checkNotNull(eventType);
         this.attributes = ImmutableMap.copyOf(attributes);

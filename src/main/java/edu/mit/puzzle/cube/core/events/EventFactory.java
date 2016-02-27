@@ -13,9 +13,16 @@ public class EventFactory {
     public Event generate(String json) throws IOException {
         Map<String,Object> map = Maps.newHashMap(MAPPER.readValue(json, Map.class));
         String eventType = (String) map.get("eventType");
-        map.remove("eventType");
 
-        return new Event(eventType, map);
+        switch (eventType) {
+        case FullReleaseEvent.EVENT_TYPE:
+            return new FullReleaseEvent((String) map.get("runId"), (String) map.get("puzzleId"));
+        case HuntStartEvent.EVENT_TYPE:
+            return new HuntStartEvent((String) map.get("runId"));
+        default:
+            map.remove("eventType");
+            return new Event(eventType, map);
+        }
     }
 
 }
