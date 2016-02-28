@@ -132,6 +132,18 @@ public class HuntStatusStore {
         }
     }
 
+    public List<String> getRunIds() {
+        Table<Integer, String, Object> resultTable = DatabaseHelper.query(
+                connectionFactory,
+                "SELECT runId FROM runs",
+                Lists.newArrayList()
+        );
+
+        return resultTable.values().stream()
+                .map(String.class::cast)
+                .collect(Collectors.toList());
+    }
+
     public String getRunForTeam(String teamId) {
         Table<Integer, String, Object> resultTable = DatabaseHelper.query(
                 connectionFactory,
