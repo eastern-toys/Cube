@@ -29,7 +29,7 @@ public class HuntStatusStoreTest {
     private AdjustableClock clock;
     private VisibilityStatusSet visibilityStatusSet;
     private HuntStatusStore huntStatusStore;
-    private EventProcessor eventProcessor;
+    private EventProcessor<Event> eventProcessor;
 
     private static String TEST_TEAM_ID = "testerteam";
     private static String TEST_PUZZLE_ID = "a_test_puzzle";

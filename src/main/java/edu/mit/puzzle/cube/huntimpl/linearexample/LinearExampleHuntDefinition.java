@@ -2,6 +2,7 @@ package edu.mit.puzzle.cube.huntimpl.linearexample;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+
 import edu.mit.puzzle.cube.core.HuntDefinition;
 import edu.mit.puzzle.cube.core.events.*;
 import edu.mit.puzzle.cube.core.model.HuntStatusStore;
@@ -50,11 +51,8 @@ public class LinearExampleHuntDefinition implements HuntDefinition {
             CompositeEventProcessor eventProcessor,
             HuntStatusStore huntStatusStore
     ) {
-        eventProcessor.addEventProcessor(event -> {
-            if (!event.getEventType().equals("SubmissionComplete")) {
-                return;
-            }
-            Submission submission = (Submission) event.getAttribute("submission");
+        eventProcessor.addEventProcessor(SubmissionCompleteEvent.class, event -> {
+            Submission submission = event.getSubmission();
             if (submission.getStatus().equals(SubmissionStatus.CORRECT)) {
                 huntStatusStore.setVisibility(
                         submission.getTeamId(),
@@ -65,22 +63,18 @@ public class LinearExampleHuntDefinition implements HuntDefinition {
             }
         });
 
-        eventProcessor.addEventProcessor(event -> {
-            if (!event.getEventType().equals("FullRelease")) {
-                return;
-            }
-            String runId = (String) event.getAttribute("runId");
-            String puzzleId = (String) event.getAttribute("puzzleId");
-            for (String teamId : huntStatusStore.getTeamIds(runId)) {
+        eventProcessor.addEventProcessor(FullReleaseEvent.class, event -> {
+            for (String teamId : huntStatusStore.getTeamIds(event.getRunId())) {
                 huntStatusStore.setVisibility(
                         teamId,
-                        puzzleId,
+                        event.getPuzzleId(),
                         "UNLOCKED",
                         false
                 );
             }
         });
 
+<<<<<<< HEAD
         eventProcessor.addEventProcessor(event -> {
             if (!event.getEventType().equals("HuntStart")) {
                 return;
@@ -91,17 +85,19 @@ public class LinearExampleHuntDefinition implements HuntDefinition {
                 for (String teamId : huntStatusStore.getTeamIds(runId)) {
                     huntStatusStore.setVisibility(teamId, "puzzle1", "UNLOCKED", false);
                 }
+=======
+        eventProcessor.addEventProcessor(HuntStartEvent.class, event -> {
+            for (String teamId : huntStatusStore.getTeamIds(event.getRunId())) {
+                huntStatusStore.setVisibility(teamId, "puzzle1", "UNLOCKED", false);
+>>>>>>> master
             }
         });
 
         for (Map.Entry<String,String> directPrereqEntry : DIRECT_UNLOCK_PREREQS.entrySet()) {
-            eventProcessor.addEventProcessor(event -> {
-                if (!event.getEventType().equals("VisibilityChange")) {
-                    return;
-                }
-                String teamId = (String) event.getAttribute("teamId");
-                String puzzleId = (String) event.getAttribute("puzzleId");
-                String status = (String) event.getAttribute("status");
+            eventProcessor.addEventProcessor(VisibilityChangeEvent.class, event -> {
+                String teamId = event.getVisibility().getTeamId();
+                String puzzleId = event.getVisibility().getPuzzleId();
+                String status = event.getVisibility().getStatus();
 
                 if (status.equals("SOLVED") && puzzleId.equals(directPrereqEntry.getKey())) {
                     huntStatusStore.setVisibility(teamId, directPrereqEntry.getValue(),

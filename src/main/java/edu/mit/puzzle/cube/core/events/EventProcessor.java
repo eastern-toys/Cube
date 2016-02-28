@@ -1,7 +1,7 @@
 package edu.mit.puzzle.cube.core.events;
 
-public interface EventProcessor {
+public interface EventProcessor<T extends Event> {
 
-    public void process(Event event);
+    public void process(T event);
 
 }

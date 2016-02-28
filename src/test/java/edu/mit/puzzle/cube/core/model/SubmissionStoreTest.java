@@ -26,7 +26,7 @@ public class SubmissionStoreTest {
     private ConnectionFactory connectionFactory;
     private AdjustableClock clock;
     private SubmissionStore submissionStore;
-    private EventProcessor eventProcessor;
+    private EventProcessor<Event> eventProcessor;
 
     private static String TEST_TEAM_ID = "testerteam";
     private static String TEST_PUZZLE_ID = "a_test_puzzle";
