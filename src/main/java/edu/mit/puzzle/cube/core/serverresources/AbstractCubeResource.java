@@ -2,8 +2,9 @@ package edu.mit.puzzle.cube.core.serverresources;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.mit.puzzle.cube.core.events.Event;
 import edu.mit.puzzle.cube.core.events.EventFactory;
-import edu.mit.puzzle.cube.core.events.GenericEventProcessor;
+import edu.mit.puzzle.cube.core.events.EventProcessor;
 import edu.mit.puzzle.cube.core.model.HuntStatusStore;
 import edu.mit.puzzle.cube.core.model.SubmissionStore;
 import org.restlet.data.Status;
@@ -25,7 +26,7 @@ public abstract class AbstractCubeResource extends ServerResource {
     protected SubmissionStore submissionStore;
     protected HuntStatusStore huntStatusStore;
     protected EventFactory eventFactory;
-    protected GenericEventProcessor eventProcessor;
+    protected EventProcessor<Event> eventProcessor;
 
     public AbstractCubeResource() {
     }
@@ -34,7 +35,7 @@ public abstract class AbstractCubeResource extends ServerResource {
         this.submissionStore = (SubmissionStore) getContext().getAttributes().get(SUBMISSION_STORE_KEY);
         this.huntStatusStore = (HuntStatusStore) getContext().getAttributes().get(HUNT_STATUS_STORE_KEY);
         this.eventFactory = (EventFactory) getContext().getAttributes().get(EVENT_FACTORY_KEY);
-        this.eventProcessor = (GenericEventProcessor) getContext().getAttributes().get(EVENT_PROCESSOR_KEY);
+        this.eventProcessor = (EventProcessor<Event>) getContext().getAttributes().get(EVENT_PROCESSOR_KEY);
     }
 
     @Get("json")

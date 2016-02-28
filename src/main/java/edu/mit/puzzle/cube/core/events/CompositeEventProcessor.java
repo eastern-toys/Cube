@@ -5,7 +5,7 @@ import com.google.common.collect.Multimap;
 
 import java.util.Collection;
 
-public class CompositeEventProcessor implements GenericEventProcessor {
+public class CompositeEventProcessor implements EventProcessor<Event> {
 
     @SuppressWarnings("rawtypes")
     private Multimap<Class, EventProcessor> eventProcessors = HashMultimap.create();
@@ -23,9 +23,14 @@ public class CompositeEventProcessor implements GenericEventProcessor {
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     public void process(Event event) {
-        Collection<EventProcessor> eventTypeProcessors = eventProcessors.get(event.getClass());
-        for (EventProcessor eventProcessor : eventTypeProcessors) {
-            eventProcessor.process(event);
+        //Loops over all entries in case we subclass Event types
+        for (Class<? extends Event> eventKeyClass : eventProcessors.keys()) {
+            if (eventKeyClass.isInstance(event)) {
+                Collection<EventProcessor> eventTypeProcessors = eventProcessors.get(eventKeyClass);
+                for (EventProcessor eventProcessor : eventTypeProcessors) {
+                    eventProcessor.process(event);
+                }
+            }
         }
     }
 

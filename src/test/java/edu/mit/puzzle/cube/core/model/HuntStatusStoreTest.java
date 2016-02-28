@@ -5,7 +5,7 @@ import edu.mit.puzzle.cube.core.AdjustableClock;
 import edu.mit.puzzle.cube.core.db.ConnectionFactory;
 import edu.mit.puzzle.cube.core.db.InMemorySingleUnsharedConnectionFactory;
 import edu.mit.puzzle.cube.core.events.Event;
-import edu.mit.puzzle.cube.core.events.GenericEventProcessor;
+import edu.mit.puzzle.cube.core.events.EventProcessor;
 import edu.mit.puzzle.cube.modules.model.StandardVisibilityStatusSet;
 import org.junit.Before;
 import org.junit.Test;
@@ -29,7 +29,7 @@ public class HuntStatusStoreTest {
     private AdjustableClock clock;
     private VisibilityStatusSet visibilityStatusSet;
     private HuntStatusStore huntStatusStore;
-    private GenericEventProcessor eventProcessor;
+    private EventProcessor<Event> eventProcessor;
 
     private static String TEST_TEAM_ID = "testerteam";
     private static String TEST_PUZZLE_ID = "a_test_puzzle";
@@ -44,7 +44,7 @@ public class HuntStatusStoreTest {
                 Lists.newArrayList(TEST_TEAM_ID),
                 Lists.newArrayList(TEST_PUZZLE_ID,TEST_PUZZLE_ID_2,TEST_PUZZLE_ID_3));
         clock = new AdjustableClock(Clock.fixed(Instant.now(), ZoneId.of("UTC")));
-        eventProcessor = mock(GenericEventProcessor.class);
+        eventProcessor = mock(EventProcessor.class);
         huntStatusStore = new HuntStatusStore(connectionFactory, clock, visibilityStatusSet, eventProcessor);
     }
 

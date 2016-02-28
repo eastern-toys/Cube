@@ -4,7 +4,8 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.*;
 import edu.mit.puzzle.cube.core.db.ConnectionFactory;
 import edu.mit.puzzle.cube.core.db.DatabaseHelper;
-import edu.mit.puzzle.cube.core.events.GenericEventProcessor;
+import edu.mit.puzzle.cube.core.events.Event;
+import edu.mit.puzzle.cube.core.events.EventProcessor;
 import edu.mit.puzzle.cube.core.events.VisibilityChangeEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -22,12 +23,12 @@ public class HuntStatusStore {
     private final ConnectionFactory connectionFactory;
     private final Clock clock;
     private final VisibilityStatusSet visibilityStatusSet;
-    private final GenericEventProcessor eventProcessor;
+    private final EventProcessor<Event> eventProcessor;
 
     public HuntStatusStore(
         ConnectionFactory connectionFactory,
         VisibilityStatusSet visibilityStatusSet,
-        GenericEventProcessor eventProcessor
+        EventProcessor<Event> eventProcessor
     ) {
         this(connectionFactory, Clock.systemUTC(), visibilityStatusSet, eventProcessor);
     }
@@ -36,7 +37,7 @@ public class HuntStatusStore {
             ConnectionFactory connectionFactory,
             Clock clock,
             VisibilityStatusSet visibilityStatusSet,
-            GenericEventProcessor eventProcessor
+            EventProcessor<Event> eventProcessor
     ) {
         this.connectionFactory = checkNotNull(connectionFactory);
         this.clock = checkNotNull(clock);

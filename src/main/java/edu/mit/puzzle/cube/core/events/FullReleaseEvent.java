@@ -2,7 +2,7 @@ package edu.mit.puzzle.cube.core.events;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class FullReleaseEvent extends Event {
+public class FullReleaseEvent implements Event {
 
     public static final String EVENT_TYPE = "FullRelease";
 
@@ -10,7 +10,6 @@ public class FullReleaseEvent extends Event {
     private final String puzzleId;
 
     public FullReleaseEvent(String runId, String puzzleId) {
-        super(EVENT_TYPE);
         this.runId = checkNotNull(runId);
         this.puzzleId = checkNotNull(puzzleId);
     }
