@@ -5,7 +5,8 @@ import com.google.common.collect.Ordering;
 import com.google.common.collect.Table;
 import edu.mit.puzzle.cube.core.db.ConnectionFactory;
 import edu.mit.puzzle.cube.core.db.DatabaseHelper;
-import edu.mit.puzzle.cube.core.events.GenericEventProcessor;
+import edu.mit.puzzle.cube.core.events.Event;
+import edu.mit.puzzle.cube.core.events.EventProcessor;
 import edu.mit.puzzle.cube.core.events.SubmissionCompleteEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -27,11 +28,11 @@ public class SubmissionStore {
 
     private final ConnectionFactory connectionFactory;
     private final Clock clock;
-    private final GenericEventProcessor eventProcessor;
+    private final EventProcessor<Event> eventProcessor;
 
     public SubmissionStore(
             ConnectionFactory connectionFactory,
-            GenericEventProcessor eventProcessor
+            EventProcessor<Event> eventProcessor
     ) {
         this(connectionFactory, Clock.systemUTC(), eventProcessor);
     }
@@ -39,7 +40,7 @@ public class SubmissionStore {
     public SubmissionStore(
             ConnectionFactory connectionFactory,
             Clock clock,
-            GenericEventProcessor eventProcessor
+            EventProcessor<Event> eventProcessor
     ) {
         this.connectionFactory = checkNotNull(connectionFactory);
         this.clock = checkNotNull(clock);
