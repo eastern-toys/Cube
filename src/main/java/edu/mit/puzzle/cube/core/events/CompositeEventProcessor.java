@@ -1,27 +1,30 @@
 package edu.mit.puzzle.cube.core.events;
 
-import com.google.common.collect.Lists;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 
-import java.util.List;
+import java.util.Collection;
 
-public class CompositeEventProcessor implements EventProcessor {
+public class CompositeEventProcessor implements GenericEventProcessor {
 
-    private List<EventProcessor> eventProcessors = Lists.newArrayList();
+    @SuppressWarnings("rawtypes")
+    private Multimap<Class, EventProcessor> eventProcessors = HashMultimap.create();
 
     public CompositeEventProcessor() {
 
     }
 
-    public void addEventProcessor(EventProcessor eventProcessor) {
-        this.eventProcessors.add(eventProcessor);
+    public <T extends Event> void addEventProcessor(
+            Class<T> clazz,
+            EventProcessor<T> eventProcessor
+    ) {
+        this.eventProcessors.put(clazz, eventProcessor);
     }
 
-    public void addEventProcessors(List<EventProcessor> eventProcessors) {
-        this.eventProcessors.addAll(eventProcessors);
-    }
-
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public void process(Event event) {
-        for (EventProcessor eventProcessor : eventProcessors) {
+        Collection<EventProcessor> eventTypeProcessors = eventProcessors.get(event.getClass());
+        for (EventProcessor eventProcessor : eventTypeProcessors) {
             eventProcessor.process(event);
         }
     }

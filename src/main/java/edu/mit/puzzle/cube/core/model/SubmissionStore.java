@@ -1,13 +1,12 @@
 package edu.mit.puzzle.cube.core.model;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Table;
 import edu.mit.puzzle.cube.core.db.ConnectionFactory;
 import edu.mit.puzzle.cube.core.db.DatabaseHelper;
-import edu.mit.puzzle.cube.core.events.Event;
-import edu.mit.puzzle.cube.core.events.EventProcessor;
+import edu.mit.puzzle.cube.core.events.GenericEventProcessor;
+import edu.mit.puzzle.cube.core.events.SubmissionCompleteEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -28,11 +27,11 @@ public class SubmissionStore {
 
     private final ConnectionFactory connectionFactory;
     private final Clock clock;
-    private final EventProcessor eventProcessor;
+    private final GenericEventProcessor eventProcessor;
 
     public SubmissionStore(
             ConnectionFactory connectionFactory,
-            EventProcessor eventProcessor
+            GenericEventProcessor eventProcessor
     ) {
         this(connectionFactory, Clock.systemUTC(), eventProcessor);
     }
@@ -40,7 +39,7 @@ public class SubmissionStore {
     public SubmissionStore(
             ConnectionFactory connectionFactory,
             Clock clock,
-            EventProcessor eventProcessor
+            GenericEventProcessor eventProcessor
     ) {
         this.connectionFactory = checkNotNull(connectionFactory);
         this.clock = checkNotNull(clock);
@@ -112,8 +111,7 @@ public class SubmissionStore {
 
         if (updated && status.isTerminal()) {
             Submission submission = this.getSubmission(submissionId).get();
-            eventProcessor.process(new Event("SubmissionComplete",
-                    ImmutableMap.of("submission", submission)));
+            eventProcessor.process(new SubmissionCompleteEvent(submission));
         }
 
         return updated;
