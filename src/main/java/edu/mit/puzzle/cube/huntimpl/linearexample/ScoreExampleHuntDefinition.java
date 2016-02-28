@@ -1,0 +1,164 @@
+package edu.mit.puzzle.cube.huntimpl.linearexample;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
+import edu.mit.puzzle.cube.core.HuntDefinition;
+import edu.mit.puzzle.cube.core.events.*;
+import edu.mit.puzzle.cube.core.model.HuntStatusStore;
+import edu.mit.puzzle.cube.core.model.Submission;
+import edu.mit.puzzle.cube.core.model.SubmissionStatus;
+import edu.mit.puzzle.cube.core.model.VisibilityStatusSet;
+import edu.mit.puzzle.cube.modules.model.StandardVisibilityStatusSet;
+
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+public class ScoreExampleHuntDefinition implements HuntDefinition {
+
+    private static final VisibilityStatusSet VISIBILITY_STATUS_SET = new StandardVisibilityStatusSet();
+    private static final Map<String,PuzzleInfo> PUZZLE_INFO_MAP;
+    static {
+        ImmutableMap.Builder<String,PuzzleInfo> puzzleInfoBuilder = ImmutableMap.builder();
+        for (int i = 1; i <= 7; ++i) {
+            int reward = 25;
+            int prereq = (i-1) * 20;
+            puzzleInfoBuilder.put("puzzle" + i, new PuzzleInfo(reward, prereq));
+        }
+        PUZZLE_INFO_MAP = puzzleInfoBuilder.build();
+    }
+
+    private static class PuzzleInfo {
+        public int pointReward;
+        public int pointPrereq;
+        public PuzzleInfo(int pointReward, int pointPrereq) {
+            this.pointReward = pointReward;
+            this.pointPrereq = pointPrereq;
+        }
+    }
+
+    @Override
+    public VisibilityStatusSet getVisibilityStatusSet() {
+        return VISIBILITY_STATUS_SET;
+    }
+
+    @Override
+    public List<String> getPuzzleList() {
+        return Lists.newArrayList(PUZZLE_INFO_MAP.keySet());
+    }
+
+    @Override
+    public void addToEventProcessor(
+            CompositeEventProcessor eventProcessor,
+            HuntStatusStore huntStatusStore
+    ) {
+        eventProcessor.addEventProcessor(SubmissionCompleteEvent.class, event -> {
+            Submission submission = event.getSubmission();
+            if (submission.getStatus().equals(SubmissionStatus.CORRECT)) {
+                huntStatusStore.setVisibility(
+                        submission.getTeamId(),
+                        submission.getPuzzleId(),
+                        "SOLVED",
+                        false
+                );
+            }
+        });
+
+        eventProcessor.addEventProcessor(FullReleaseEvent.class, event -> {
+            for (String teamId : huntStatusStore.getTeamIds(event.getRunId())) {
+                huntStatusStore.setVisibility(
+                        teamId,
+                        event.getPuzzleId(),
+                        "UNLOCKED",
+                        false
+                );
+            }
+        });
+
+        eventProcessor.addEventProcessor(HuntStartEvent.class, event -> {
+            String runId = event.getRunId();
+            boolean changed = huntStatusStore.recordHuntRunStart(runId);
+            if (changed) {
+                for (String teamId : huntStatusStore.getTeamIds(runId)) {
+                    huntStatusStore.setTeamProperty(teamId, "score", 0);
+                }
+            }
+        });
+
+        eventProcessor.addEventProcessor(VisibilityChangeEvent.class, event -> {
+            updateStoredScore(event.getVisibility().getTeamId(), huntStatusStore, eventProcessor);
+        });
+
+        eventProcessor.addEventProcessor(ScoreUpdateEvent.class, event -> {
+            PUZZLE_INFO_MAP.entrySet().stream()
+                    .filter(puzzleEntry -> event.getScore() >= puzzleEntry.getValue().pointPrereq)
+                    .map(Map.Entry::getKey)
+                    .forEach(puzzleKey -> huntStatusStore.setVisibility(event.getTeamId(), puzzleKey, "UNLOCKED", false));
+        });
+
+        eventProcessor.addEventProcessor(PeriodicTimerEvent.class, event -> {
+            for (String runId : huntStatusStore.getRunIds()) {
+                for (String teamId : huntStatusStore.getTeamIds(runId)) {
+                    updateStoredScore(teamId, huntStatusStore, eventProcessor);
+                }
+            }
+        });
+    }
+
+    private void updateStoredScore(
+            String teamId,
+            HuntStatusStore huntStatusStore,
+            EventProcessor<Event> eventProcessor
+    ) {
+        Optional<Integer> score = calculateTeamScore(teamId, huntStatusStore);
+        if (score.isPresent()) {
+            huntStatusStore.setTeamProperty(teamId, "score", score.get());
+            eventProcessor.process(new ScoreUpdateEvent(teamId, score.get()));
+        }
+    }
+
+    private Optional<Integer> calculateTeamScore(
+            String teamId,
+            HuntStatusStore huntStatusStore
+    ) {
+        String runId = huntStatusStore.getRunForTeam(teamId);
+        Optional<Instant> start = Optional.ofNullable(
+                (Instant) huntStatusStore.getHuntRunProperties(runId).get("startTimestamp"));
+        if (!start.isPresent() || Instant.now().isBefore(start.get())) {
+            return Optional.empty();
+        }
+
+        int seconds = (int) Duration.between(start.get(), Instant.now()).getSeconds();
+        int timeScore = seconds / 60; //1 point every minute
+
+        Map<String, String> visibilities = huntStatusStore.getVisibilitiesForTeam(teamId);
+        int puzzleScore = visibilities.entrySet().stream()
+                .filter(entry -> entry.getValue().equals("SOLVED"))
+                .map(entry -> entry.getKey())
+                .mapToInt(puzzleKey -> PUZZLE_INFO_MAP.get(puzzleKey).pointReward)
+                .sum();
+
+        return Optional.of(timeScore + puzzleScore);
+    }
+
+    private static class ScoreUpdateEvent implements Event {
+        private final String teamId;
+        private final int score;
+
+        public ScoreUpdateEvent(String teamId, int score) {
+            this.teamId = teamId;
+            this.score = score;
+        }
+
+        public String getTeamId() {
+            return teamId;
+        }
+
+        public int getScore() {
+            return score;
+        }
+    }
+}

@@ -1,14 +1,18 @@
 package edu.mit.puzzle.cube.core;
 
+import com.google.common.util.concurrent.AbstractScheduledService;
+import com.google.common.util.concurrent.Service;
 import edu.mit.puzzle.cube.core.db.ConnectionFactory;
 import edu.mit.puzzle.cube.core.environments.DevelopmentEnvironment;
 import edu.mit.puzzle.cube.core.environments.ServiceEnvironment;
 import edu.mit.puzzle.cube.core.events.CompositeEventProcessor;
 import edu.mit.puzzle.cube.core.events.EventFactory;
+import edu.mit.puzzle.cube.core.events.PeriodicTimerEvent;
 import edu.mit.puzzle.cube.core.model.HuntStatusStore;
 import edu.mit.puzzle.cube.core.model.SubmissionStore;
 import edu.mit.puzzle.cube.core.serverresources.*;
 import edu.mit.puzzle.cube.huntimpl.linearexample.LinearExampleHuntDefinition;
+import edu.mit.puzzle.cube.huntimpl.linearexample.ScoreExampleHuntDefinition;
 import org.restlet.Application;
 import org.restlet.Component;
 import org.restlet.Restlet;
@@ -16,6 +20,7 @@ import org.restlet.data.Protocol;
 import org.restlet.routing.Router;
 
 import java.sql.SQLException;
+import java.util.concurrent.TimeUnit;
 
 public class CubeApplication extends Application {
 
@@ -23,6 +28,8 @@ public class CubeApplication extends Application {
     private final HuntStatusStore huntStatusStore;
     private final EventFactory eventFactory;
     private final CompositeEventProcessor eventProcessor;
+
+    private final Service timingEventService;
 
     public CubeApplication() throws SQLException {
         HuntDefinition huntDefinition = new LinearExampleHuntDefinition();
@@ -46,6 +53,19 @@ public class CubeApplication extends Application {
                 eventProcessor,
                 huntStatusStore
         );
+
+        timingEventService = new AbstractScheduledService() {
+            @Override
+            protected void runOneIteration() throws Exception {
+                eventProcessor.process(new PeriodicTimerEvent());
+            }
+
+            @Override
+            protected Scheduler scheduler() {
+                return Scheduler.newFixedRateSchedule(0, 10, TimeUnit.SECONDS);
+            }
+        };
+        timingEventService.startAsync();
     }
 
     @Override
