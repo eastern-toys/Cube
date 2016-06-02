@@ -1,4 +1,4 @@
-package edu.mit.puzzle.cube.huntimpl.linearexample;
+package edu.mit.puzzle.cube.huntimpl.scoreexample;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;

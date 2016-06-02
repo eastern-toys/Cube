@@ -12,7 +12,6 @@ import edu.mit.puzzle.cube.core.model.HuntStatusStore;
 import edu.mit.puzzle.cube.core.model.SubmissionStore;
 import edu.mit.puzzle.cube.core.serverresources.*;
 import edu.mit.puzzle.cube.huntimpl.linearexample.LinearExampleHuntDefinition;
-import edu.mit.puzzle.cube.huntimpl.linearexample.ScoreExampleHuntDefinition;
 import org.restlet.Application;
 import org.restlet.Component;
 import org.restlet.Restlet;
