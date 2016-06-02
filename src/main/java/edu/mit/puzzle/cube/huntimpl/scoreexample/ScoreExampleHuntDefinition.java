@@ -68,7 +68,7 @@ public class ScoreExampleHuntDefinition implements HuntDefinition {
         });
 
         eventProcessor.addEventProcessor(FullReleaseEvent.class, event -> {
-            for (String teamId : huntStatusStore.getTeamIds(event.getRunId())) {
+            for (String teamId : huntStatusStore.getTeamIds()) {
                 huntStatusStore.setVisibility(
                         teamId,
                         event.getPuzzleId(),
@@ -79,10 +79,9 @@ public class ScoreExampleHuntDefinition implements HuntDefinition {
         });
 
         eventProcessor.addEventProcessor(HuntStartEvent.class, event -> {
-            String runId = event.getRunId();
-            boolean changed = huntStatusStore.recordHuntRunStart(runId);
+            boolean changed = huntStatusStore.recordHuntRunStart();
             if (changed) {
-                for (String teamId : huntStatusStore.getTeamIds(runId)) {
+                for (String teamId : huntStatusStore.getTeamIds()) {
                     huntStatusStore.setTeamProperty(teamId, "score", 0);
                 }
             }
@@ -100,10 +99,8 @@ public class ScoreExampleHuntDefinition implements HuntDefinition {
         });
 
         eventProcessor.addEventProcessor(PeriodicTimerEvent.class, event -> {
-            for (String runId : huntStatusStore.getRunIds()) {
-                for (String teamId : huntStatusStore.getTeamIds(runId)) {
-                    updateStoredScore(teamId, huntStatusStore, eventProcessor);
-                }
+            for (String teamId : huntStatusStore.getTeamIds()) {
+                updateStoredScore(teamId, huntStatusStore, eventProcessor);
             }
         });
     }
@@ -124,9 +121,8 @@ public class ScoreExampleHuntDefinition implements HuntDefinition {
             String teamId,
             HuntStatusStore huntStatusStore
     ) {
-        String runId = huntStatusStore.getRunForTeam(teamId);
         Optional<Instant> start = Optional.ofNullable(
-                (Instant) huntStatusStore.getHuntRunProperties(runId).get("startTimestamp"));
+                (Instant) huntStatusStore.getHuntRunProperties().get("startTimestamp"));
         if (!start.isPresent() || Instant.now().isBefore(start.get())) {
             return Optional.empty();
         }

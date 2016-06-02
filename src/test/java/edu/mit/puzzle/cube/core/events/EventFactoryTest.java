@@ -16,7 +16,7 @@ public class EventFactoryTest {
 
     @Test
     public void testDeserializationWithoutRequiredAttributes() throws IOException {
-        String json = "{\"eventType\":\"HuntStart\"}";
+        String json = "{\"eventType\":\"FullRelease\"}";
 
         exception.expect(IllegalArgumentException.class);
         Event event = new EventFactory().generate(json);
@@ -24,10 +24,9 @@ public class EventFactoryTest {
 
     @Test
     public void testDeserializationWithAttributes() throws IOException {
-        String json = "{\"eventType\":\"HuntStart\",\"runId\":\"testHunt\"}";
+        String json = "{\"eventType\":\"HuntStart\"}";
         Event event = new EventFactory().generate(json);
         assertTrue(HuntStartEvent.class.isInstance(event));
-        assertEquals("testHunt", ((HuntStartEvent) event).getRunId());
     }
 
     @Test

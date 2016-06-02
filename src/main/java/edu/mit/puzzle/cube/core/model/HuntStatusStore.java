@@ -109,21 +109,20 @@ public class HuntStatusStore {
         return mapBuilder.build();
     }
 
-    public boolean recordHuntRunStart(String runId) {
+    public boolean recordHuntRunStart() {
         Integer updates = DatabaseHelper.update(
                 connectionFactory,
-                "UPDATE runs SET startTimestamp = ? WHERE runId = ? AND startTimestamp IS NULL",
-                Lists.newArrayList(clock.instant(), runId)
+                "UPDATE run SET startTimestamp = ? WHERE startTimestamp IS NULL",
+                Lists.newArrayList(clock.instant())
         );
         return updates > 0;
     }
 
-    public Map<String,Object> getHuntRunProperties(String runId) {
+    public Map<String,Object> getHuntRunProperties() {
         Table<Integer, String, Object> resultTable = DatabaseHelper.query(
                 connectionFactory,
-                "SELECT * FROM runs " +
-                        "WHERE runId = ?",
-                Lists.newArrayList(runId)
+                "SELECT * FROM run",
+                Lists.newArrayList()
         );
 
         if (resultTable.rowKeySet().size() == 1) {
@@ -133,33 +132,11 @@ public class HuntStatusStore {
         }
     }
 
-    public List<String> getRunIds() {
+    public Set<String> getTeamIds() {
         Table<Integer, String, Object> resultTable = DatabaseHelper.query(
                 connectionFactory,
-                "SELECT runId FROM runs",
+                "SELECT teamId FROM teams",
                 Lists.newArrayList()
-        );
-
-        return resultTable.values().stream()
-                .map(String.class::cast)
-                .collect(Collectors.toList());
-    }
-
-    public String getRunForTeam(String teamId) {
-        Table<Integer, String, Object> resultTable = DatabaseHelper.query(
-                connectionFactory,
-                "SELECT runId FROM teams WHERE teamId = ?",
-                Lists.newArrayList(teamId)
-        );
-
-        return (String) resultTable.get(0, "runId");
-    }
-
-    public Set<String> getTeamIds(String runId) {
-        Table<Integer, String, Object> resultTable = DatabaseHelper.query(
-                connectionFactory,
-                "SELECT teamId FROM teams WHERE runId = ?",
-                Lists.newArrayList(runId)
         );
 
         return resultTable.values().stream().map(o -> (String) o).collect(Collectors.toSet());
