@@ -6,13 +6,8 @@ public class HuntStartEvent implements Event {
 
     public static final String EVENT_TYPE = "HuntStart";
 
-    private final String runId;
+    public HuntStartEvent() {
 
-    public HuntStartEvent(String runId) {
-        this.runId = checkNotNull(runId);
     }
 
-    public String getRunId() {
-        return runId;
-    }
 }

@@ -17,9 +17,9 @@ public class EventFactory {
         try {
             switch (eventType) {
                 case FullReleaseEvent.EVENT_TYPE:
-                    return new FullReleaseEvent((String) map.get("runId"), (String) map.get("puzzleId"));
+                    return new FullReleaseEvent((String) map.get("puzzleId"));
                 case HuntStartEvent.EVENT_TYPE:
-                    return new HuntStartEvent((String) map.get("runId"));
+                    return new HuntStartEvent();
                 default:
                     throw new IllegalArgumentException("Unsupported event type");
             }

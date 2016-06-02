@@ -71,15 +71,11 @@ public class InMemoryConnectionFactory implements ConnectionFactory {
                 Lists.newArrayList()
         );
 
-        String createRunsTableSql = "CREATE TABLE IF NOT EXISTS runs " +
-                "(runId VARCHAR(20), " +
-                "startTimestamp DATETIME DEFAULT NULL, " +
-                "PRIMARY KEY(runId ASC))";
+        String createRunTableSql = "CREATE TABLE IF NOT EXISTS run " +
+                "(startTimestamp DATETIME DEFAULT NULL)";
         String createTeamsTableSql = "CREATE TABLE IF NOT EXISTS teams " +
                 "(teamId VARCHAR(20), " +
-                "runId VARCHAR(20), " +
-                "PRIMARY KEY(teamId ASC)," +
-                "FOREIGN KEY(runId) REFERENCES runs(runId))";
+                "PRIMARY KEY(teamId ASC))";
         String createTeamPropertiesTableSql = "CREATE TABLE IF NOT EXISTS team_properties " +
                 "(teamId VARCHAR(20), " +
                 "propertyKey VARCHAR(20), " +
@@ -111,7 +107,7 @@ public class InMemoryConnectionFactory implements ConnectionFactory {
                 "FOREIGN KEY(puzzleId) REFERENCES puzzles(puzzleId))";
 
         List<String> createTableSqls = Lists.newArrayList(
-                createRunsTableSql,
+                createRunTableSql,
                 createTeamsTableSql, createTeamPropertiesTableSql, createPuzzlesTableSql,
                 createSubmissionsTableSql, createVisibilitiesTableSql, createVisibilityHistoriesTableSql);
         for (String createTableSql : createTableSqls) {
@@ -122,10 +118,10 @@ public class InMemoryConnectionFactory implements ConnectionFactory {
             );
         }
 
-        String insertRunSql = "INSERT INTO runs (runId) VALUES ('development')";
+        String insertRunSql = "INSERT INTO run (startTimestamp) VALUES (NULL)";
         DatabaseHelper.insert(this, insertRunSql, Lists.newArrayList());
 
-        String insertTeamSql = "INSERT INTO teams (teamId, runId) VALUES (?, 'development')";
+        String insertTeamSql = "INSERT INTO teams (teamId) VALUES (?)";
         List<List<Object>> parameterLists = teamIdList.stream()
                 .map(id -> Lists.<Object>newArrayList(id))
                 .collect(Collectors.toList());
