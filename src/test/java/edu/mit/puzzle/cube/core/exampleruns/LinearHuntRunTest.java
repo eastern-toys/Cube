@@ -3,6 +3,7 @@ package edu.mit.puzzle.cube.core.exampleruns;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
+
 import edu.mit.puzzle.cube.core.HuntDefinition;
 import edu.mit.puzzle.cube.core.db.ConnectionFactory;
 import edu.mit.puzzle.cube.core.environments.DevelopmentEnvironment;
@@ -11,8 +12,15 @@ import edu.mit.puzzle.cube.core.events.CompositeEventProcessor;
 import edu.mit.puzzle.cube.core.events.EventFactory;
 import edu.mit.puzzle.cube.core.model.HuntStatusStore;
 import edu.mit.puzzle.cube.core.model.SubmissionStore;
-import edu.mit.puzzle.cube.core.serverresources.*;
+import edu.mit.puzzle.cube.core.serverresources.AbstractCubeResource;
+import edu.mit.puzzle.cube.core.serverresources.EventsResource;
+import edu.mit.puzzle.cube.core.serverresources.SubmissionResource;
+import edu.mit.puzzle.cube.core.serverresources.SubmissionsResource;
+import edu.mit.puzzle.cube.core.serverresources.TeamResource;
+import edu.mit.puzzle.cube.core.serverresources.VisibilitiesResource;
+import edu.mit.puzzle.cube.core.serverresources.VisibilityResource;
 import edu.mit.puzzle.cube.huntimpl.linearexample.LinearExampleHuntDefinition;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -26,6 +34,8 @@ import org.restlet.routing.Router;
 
 import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.logging.Logger;
 
 import static org.junit.Assert.assertEquals;
@@ -67,6 +77,8 @@ public class LinearHuntRunTest {
                         AbstractCubeResource.EVENT_PROCESSOR_KEY, eventProcessor,
                         AbstractCubeResource.EVENT_FACTORY_KEY, eventFactory
                 )));
+        ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(1);
+        when(context.getExecutorService()).thenReturn(executorService);
         Logger logger = mock(Logger.class, Mockito.RETURNS_SMART_NULLS);
         when(context.getLogger()).thenReturn(logger);
 
@@ -98,7 +110,7 @@ public class LinearHuntRunTest {
     }
 
     private JsonNode postHuntStart(String runId) throws IOException {
-        String json = String.format("{'eventType':'HuntStart','runId':'%s'}", runId);
+        String json = String.format("{\"eventType\":\"HuntStart\",\"runId\":\"%s\"}", runId);
         Representation representation = new JsonRepresentation(json);
         Request request = new Request(Method.POST, "/events", representation);
         Response response = router.handle(request);
@@ -110,7 +122,7 @@ public class LinearHuntRunTest {
     }
 
     private JsonNode postFullRelease(String runId, String puzzleId) throws IOException {
-        String json = String.format("{'eventType':'FullRelease','runId':'%s','puzzleId':'%s'}", runId, puzzleId);
+        String json = String.format("{\"eventType\":\"FullRelease\",\"runId\":\"%s\",\"puzzleId\":\"%s\"}", runId, puzzleId);
         Representation representation = new JsonRepresentation(json);
         Request request = new Request(Method.POST, "/events", representation);
         Response response = router.handle(request);
@@ -122,7 +134,7 @@ public class LinearHuntRunTest {
     }
 
     private JsonNode postNewSubmission(String teamId, String puzzleId, String submission) throws IOException {
-        String json = String.format("{'teamId':'%s','puzzleId':'%s','submission':'%s'}",
+        String json = String.format("{\"teamId\":\"%s\",\"puzzleId\":\"%s\",\"submission\":\"%s\"}",
                 teamId, puzzleId, submission);
         Representation representation = new JsonRepresentation(json);
         Request request = new Request(Method.POST, "/submissions", representation);
@@ -143,7 +155,7 @@ public class LinearHuntRunTest {
     }
 
     private JsonNode postUpdateSubmission(Integer submissionId, String status) throws IOException {
-        String json = String.format("{'status':'%s'}", status);
+        String json = String.format("{\"status\":\"%s\"}", status);
         Representation representation = new JsonRepresentation(json);
         Request request = new Request(Method.POST,
                 String.format("/submissions/%d", submissionId),

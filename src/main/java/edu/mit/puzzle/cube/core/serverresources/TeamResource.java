@@ -2,12 +2,10 @@ package edu.mit.puzzle.cube.core.serverresources;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.Maps;
-import edu.mit.puzzle.cube.core.model.HuntStatusStore;
 import org.restlet.ext.json.JsonRepresentation;
-
+import org.restlet.representation.Representation;
+import org.restlet.resource.Get;
 import java.util.Map;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 public class TeamResource extends AbstractCubeResource {
 
@@ -19,7 +17,8 @@ public class TeamResource extends AbstractCubeResource {
         return idString;
     }
 
-    public String handleGet() throws JsonProcessingException {
+    @Get
+    public Representation handleGet() throws JsonProcessingException {
         String id = getId();
         Map<String,Object> propertyMap = huntStatusStore.getTeamProperties(id);
 
@@ -27,11 +26,6 @@ public class TeamResource extends AbstractCubeResource {
         returnMap.put("teamId",id);
         returnMap.putAll(propertyMap);
 
-        return MAPPER.writeValueAsString(returnMap);
+        return new JsonRepresentation(MAPPER.writeValueAsString(returnMap));
     }
-
-    public String handlePost(JsonRepresentation representation) throws JsonProcessingException {
-        return "";
-    }
-
 }

@@ -47,28 +47,28 @@ public class SubmissionStore {
         this.eventProcessor = checkNotNull(eventProcessor);
     }
 
-    public boolean addSubmission(
-            String teamId,
-            String puzzleId,
-            String submissionText
-    ) {
+    public boolean addSubmission(Submission submission) {
         return DatabaseHelper.insert(
                 connectionFactory,
                 "INSERT INTO submissions (puzzleId, teamId, submission, timestamp) " +
                         "VALUES (?,?,?,?)",
-                Lists.newArrayList(puzzleId, teamId, submissionText, clock.instant())
+                Lists.newArrayList(
+                        submission.getPuzzleId(),
+                        submission.getTeamId(),
+                        submission.getSubmission(),
+                        clock.instant())
         ).isPresent();
     }
 
     private static Submission generateSubmissionObject(Map<String,Object> rowMap) {
-        return new Submission(
-                (Integer) rowMap.get("submissionId"),
-                (String) rowMap.get("teamId"),
-                (String) rowMap.get("puzzleId"),
-                (String) rowMap.get("submission"),
-                SubmissionStatus.valueOf((String) rowMap.get("status")),
-                (Instant) rowMap.get("timestamp")
-        );
+        return Submission.builder()
+                .setSubmissionId((int) rowMap.get("submissionId"))
+                .setTeamId((String) rowMap.get("teamId"))
+                .setPuzzleId((String) rowMap.get("puzzleId"))
+                .setSubmission((String) rowMap.get("submission"))
+                .setStatus(SubmissionStatus.valueOf((String) rowMap.get("status")))
+                .setTimestamp((Instant) rowMap.get("timestamp"))
+                .build();
     }
 
     public List<Submission> getAllSubmissions() {

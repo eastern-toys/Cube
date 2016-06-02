@@ -1,50 +1,33 @@
 package edu.mit.puzzle.cube.core.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import edu.mit.puzzle.cube.core.db.DatabaseHelper;
-
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.google.auto.value.AutoValue;
 import java.time.Instant;
+import javax.annotation.Nullable;
 
-public class Submission {
-
-    private int submissionId;
-    private String teamId;
-    private String puzzleId;
-    private String submissionText;
-    private SubmissionStatus status;
-    private Instant timestamp;
-
-    public Submission(int submissionId, String teamId, String puzzleId, String submissionText, SubmissionStatus status, Instant timestamp) {
-        this.submissionId = submissionId;
-        this.teamId = teamId;
-        this.puzzleId = puzzleId;
-        this.submissionText = submissionText;
-        this.status = status;
-        this.timestamp = timestamp;
+@AutoValue
+@JsonDeserialize(builder = AutoValue_Submission.Builder.class)
+public abstract class Submission {
+    @AutoValue.Builder
+    public static abstract class Builder {
+        @Nullable @JsonProperty("submissionId") public abstract Builder setSubmissionId(Integer submissionId);
+        @Nullable @JsonProperty("teamId") public abstract Builder setTeamId(String teamId);
+        @Nullable @JsonProperty("puzzleId") public abstract Builder setPuzzleId(String puzzleId);
+        @Nullable @JsonProperty("submission") public abstract Builder setSubmission(String submission);
+        @Nullable @JsonProperty("status") public abstract Builder setStatus(SubmissionStatus status);
+        @Nullable @JsonProperty("timestamp") public abstract Builder setTimestamp(Instant timestamp);
+        public abstract Submission build();
     }
 
-    public int getSubmissionId() {
-        return submissionId;
+    public static Builder builder() {
+        return new AutoValue_Submission.Builder();
     }
 
-    public String getTeamId() {
-        return teamId;
-    }
-
-    public String getPuzzleId() {
-        return puzzleId;
-    }
-
-    public String getSubmissionText() {
-        return submissionText;
-    }
-
-    public SubmissionStatus getStatus() {
-        return status;
-    }
-
-    public Instant getTimestamp() {
-        return timestamp;
-    }
+    @Nullable @JsonProperty("submissionId") public abstract Integer getSubmissionId();
+    @Nullable @JsonProperty("teamId") public abstract String getTeamId();
+    @Nullable @JsonProperty("puzzleId") public abstract String getPuzzleId();
+    @Nullable @JsonProperty("submission") public abstract String getSubmission();
+    @Nullable @JsonProperty("status") public abstract SubmissionStatus getStatus();
+    @Nullable @JsonProperty("timestamp") public abstract Instant getTimestamp();
 }

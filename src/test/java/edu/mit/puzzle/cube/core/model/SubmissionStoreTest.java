@@ -45,22 +45,26 @@ public class SubmissionStoreTest {
 
     @Test
     public void testAddAndGetSingleSubmission() {
-        submissionStore.addSubmission(TEST_TEAM_ID,TEST_PUZZLE_ID,"guess1");
+        submissionStore.addSubmission(Submission.builder()
+                .setTeamId(TEST_TEAM_ID)
+                .setPuzzleId(TEST_PUZZLE_ID)
+                .setSubmission("guess1")
+                .build());
 
         List<Submission> submissions = submissionStore.getAllSubmissions();
         assertEquals(1, submissions.size());
-        assertEquals(1, submissions.get(0).getSubmissionId());
+        assertEquals(1, submissions.get(0).getSubmissionId().intValue());
         assertEquals(TEST_TEAM_ID, submissions.get(0).getTeamId());
         assertEquals(TEST_PUZZLE_ID, submissions.get(0).getPuzzleId());
-        assertEquals("guess1", submissions.get(0).getSubmissionText());
+        assertEquals("guess1", submissions.get(0).getSubmission());
         assertEquals(SubmissionStatus.getDefault(), submissions.get(0).getStatus());
         assertEquals(clock.instant(), submissions.get(0).getTimestamp());
 
         Submission submission = submissionStore.getSubmission(1).get();
-        assertEquals(1, submission.getSubmissionId());
+        assertEquals(1, submission.getSubmissionId().intValue());
         assertEquals(TEST_TEAM_ID, submission.getTeamId());
         assertEquals(TEST_PUZZLE_ID, submission.getPuzzleId());
-        assertEquals("guess1", submission.getSubmissionText());
+        assertEquals("guess1", submission.getSubmission());
         assertEquals(SubmissionStatus.getDefault(), submission.getStatus());
         assertEquals(clock.instant(), submission.getTimestamp());
 
@@ -70,19 +74,27 @@ public class SubmissionStoreTest {
     @Test
     public void testAddAndGetMultipleSubmissions() {
         Instant firstInstant = clock.instant();
-        submissionStore.addSubmission(TEST_TEAM_ID,TEST_PUZZLE_ID,"guess1");
+        submissionStore.addSubmission(Submission.builder()
+                .setTeamId(TEST_TEAM_ID)
+                .setPuzzleId(TEST_PUZZLE_ID)
+                .setSubmission("guess1")
+                .build());
 
         clock.setWrappedClock(Clock.fixed(clock.instant().plus(5, ChronoUnit.MINUTES), clock.getZone()));
         Instant secondInstant = clock.instant();
-        submissionStore.addSubmission(TEST_TEAM_ID,TEST_PUZZLE_ID, "guess2");
+        submissionStore.addSubmission(Submission.builder()
+                .setTeamId(TEST_TEAM_ID)
+                .setPuzzleId(TEST_PUZZLE_ID)
+                .setSubmission("guess2")
+                .build());
 
         List<Submission> submissions = submissionStore.getAllSubmissions();
         assertEquals(2, submissions.size());
-        assertEquals(1, submissions.get(0).getSubmissionId());
-        assertEquals("guess1", submissions.get(0).getSubmissionText());
+        assertEquals(1, submissions.get(0).getSubmissionId().intValue());
+        assertEquals("guess1", submissions.get(0).getSubmission());
         assertEquals(firstInstant, submissions.get(0).getTimestamp());
-        assertEquals(2, submissions.get(1).getSubmissionId());
-        assertEquals("guess2", submissions.get(1).getSubmissionText());
+        assertEquals(2, submissions.get(1).getSubmissionId().intValue());
+        assertEquals("guess2", submissions.get(1).getSubmission());
         assertEquals(secondInstant, submissions.get(1).getTimestamp());
 
         verifyZeroInteractions(eventProcessor);
@@ -90,7 +102,11 @@ public class SubmissionStoreTest {
 
     @Test
     public void testUpdateSubmissionStatus() {
-        submissionStore.addSubmission(TEST_TEAM_ID, TEST_PUZZLE_ID, "guess1");
+        submissionStore.addSubmission(Submission.builder()
+                .setTeamId(TEST_TEAM_ID)
+                .setPuzzleId(TEST_PUZZLE_ID)
+                .setSubmission("guess1")
+                .build());
         Submission submission = submissionStore.getSubmission(1).get();
         assertEquals(SubmissionStatus.SUBMITTED, submission.getStatus());
 
