@@ -79,10 +79,11 @@ public class HuntStatusStore {
 
         return resultTable.rowMap().values().stream()
                 .map(rowMap ->
-                    new Visibility(
-                            (String) rowMap.get("teamId"),
-                            (String) rowMap.get("puzzleId"),
-                            (String) rowMap.get("status"))
+                    Visibility.builder()
+                            .setTeamId((String) rowMap.get("teamId"))
+                            .setPuzzleId((String) rowMap.get("puzzleId"))
+                            .setStatus((String) rowMap.get("status"))
+                            .build()
                 )
                 .collect(Collectors.toList());
     }
@@ -263,8 +264,11 @@ public class HuntStatusStore {
                     "INSERT INTO visibility_history (teamId, puzzleId, status, timestamp) VALUES (?, ?, ?, ?)",
                     Lists.newArrayList(teamId, puzzleId, status, clock.instant()));
 
-            VisibilityChangeEvent changeEvent = new VisibilityChangeEvent(
-                    new Visibility(teamId, puzzleId, status));
+            VisibilityChangeEvent changeEvent = new VisibilityChangeEvent(Visibility.builder()
+                    .setTeamId(teamId)
+                    .setPuzzleId(puzzleId)
+                    .setStatus(status)
+                    .build());
             eventProcessor.process(changeEvent);
 
             return true;

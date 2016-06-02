@@ -2,15 +2,11 @@ package edu.mit.puzzle.cube.core.serverresources;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
-import edu.mit.puzzle.cube.core.model.HuntStatusStore;
-import org.json.JSONException;
-import org.json.JSONObject;
+import edu.mit.puzzle.cube.core.model.Visibility;
 import org.restlet.ext.json.JsonRepresentation;
-
-import java.util.Map;
-
-import static com.google.common.base.Preconditions.checkNotNull;
+import org.restlet.representation.Representation;
+import org.restlet.resource.Get;
+import org.restlet.resource.Post;
 
 public class VisibilityResource extends AbstractCubeResource {
 
@@ -30,36 +26,28 @@ public class VisibilityResource extends AbstractCubeResource {
         return idString;
     }
 
-    @Override
-    protected String handleGet() throws JsonProcessingException {
+    @Get
+    public Visibility handleGet() throws JsonProcessingException {
         String teamId = getTeamId();
         String puzzleId = getPuzzleId();
-
-        Map<String,Object> defaultMap = Maps.newHashMap();
-        defaultMap.put("teamId", teamId);
-        defaultMap.put("puzzleId", puzzleId);
-        defaultMap.put("status", huntStatusStore.getVisibility(teamId, puzzleId));
-        return MAPPER.writeValueAsString(defaultMap);
+        return Visibility.builder()
+                .setTeamId(teamId)
+                .setPuzzleId(puzzleId)
+                .setStatus(huntStatusStore.getVisibility(teamId, puzzleId))
+                .build();
     }
 
-    @Override
-    protected String handlePost(JsonRepresentation representation) throws JsonProcessingException {
+    @Post
+    public Representation handlePost(Visibility visibility) throws JsonProcessingException {
         String teamId = getTeamId();
         String puzzleId = getPuzzleId();
 
-        try {
-            JSONObject obj = representation.getJsonObject();
-            String status = obj.getString("status");
-            if (status == null || !huntStatusStore.getVisibilityStatusSet().isAllowedStatus(status)) {
-                return MAPPER.writeValueAsString(ImmutableMap.of("updated", false));
-            }
-
-            boolean changed = huntStatusStore.setVisibility(teamId, puzzleId, status, true);
-            return MAPPER.writeValueAsString(ImmutableMap.of("updated",changed));
-
-        } catch (JSONException e) {
-            throw new RuntimeException(e);
+        if (visibility.getStatus() == null
+                || !huntStatusStore.getVisibilityStatusSet().isAllowedStatus(visibility.getStatus())) {
+            return new JsonRepresentation(MAPPER.writeValueAsString(ImmutableMap.of("updated", false)));
         }
 
+        boolean changed = huntStatusStore.setVisibility(teamId, puzzleId, visibility.getStatus(), true);
+        return new JsonRepresentation(MAPPER.writeValueAsString(ImmutableMap.of("updated",changed)));
     }
 }

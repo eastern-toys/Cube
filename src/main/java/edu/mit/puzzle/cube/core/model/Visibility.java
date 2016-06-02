@@ -1,28 +1,25 @@
 package edu.mit.puzzle.cube.core.model;
 
-import java.time.Instant;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.google.auto.value.AutoValue;
 
-public class Visibility {
-
-    private String teamId;
-    private String puzzleId;
-    private String status;
-
-    public Visibility(String teamId, String puzzleId, String status) {
-        this.teamId = teamId;
-        this.puzzleId = puzzleId;
-        this.status = status;
+@AutoValue
+@JsonDeserialize(builder = AutoValue_Visibility.Builder.class)
+public abstract class Visibility {
+    @AutoValue.Builder
+    public static abstract class Builder {
+        @JsonProperty("teamId") public abstract Builder setTeamId(String teamId);
+        @JsonProperty("puzzleId") public abstract Builder setPuzzleId(String puzzleId);
+        @JsonProperty("status") public abstract Builder setStatus(String status);
+        public abstract Visibility build();
     }
 
-    public String getTeamId() {
-        return teamId;
+    public static Builder builder() {
+        return new AutoValue_Visibility.Builder();
     }
 
-    public String getPuzzleId() {
-        return puzzleId;
-    }
-
-    public String getStatus() {
-        return status;
-    }
+    @JsonProperty("teamId") public abstract String getTeamId();
+    @JsonProperty("puzzleId") public abstract String getPuzzleId();
+    @JsonProperty("status") public abstract String getStatus();
 }
