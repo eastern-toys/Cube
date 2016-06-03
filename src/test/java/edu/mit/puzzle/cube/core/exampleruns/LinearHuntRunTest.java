@@ -9,7 +9,6 @@ import edu.mit.puzzle.cube.core.db.ConnectionFactory;
 import edu.mit.puzzle.cube.core.environments.DevelopmentEnvironment;
 import edu.mit.puzzle.cube.core.environments.ServiceEnvironment;
 import edu.mit.puzzle.cube.core.events.CompositeEventProcessor;
-import edu.mit.puzzle.cube.core.events.EventFactory;
 import edu.mit.puzzle.cube.core.model.HuntStatusStore;
 import edu.mit.puzzle.cube.core.model.SubmissionStore;
 import edu.mit.puzzle.cube.core.serverresources.AbstractCubeResource;
@@ -55,7 +54,6 @@ public class LinearHuntRunTest {
 
         ConnectionFactory connectionFactory = serviceEnvironment.getConnectionFactory();
 
-        EventFactory eventFactory = new EventFactory();
         CompositeEventProcessor eventProcessor = new CompositeEventProcessor();
         SubmissionStore submissionStore = new SubmissionStore(
                 connectionFactory,
@@ -74,8 +72,7 @@ public class LinearHuntRunTest {
                 ImmutableMap.of(
                         AbstractCubeResource.SUBMISSION_STORE_KEY, submissionStore,
                         AbstractCubeResource.HUNT_STATUS_STORE_KEY, huntStatusStore,
-                        AbstractCubeResource.EVENT_PROCESSOR_KEY, eventProcessor,
-                        AbstractCubeResource.EVENT_FACTORY_KEY, eventFactory
+                        AbstractCubeResource.EVENT_PROCESSOR_KEY, eventProcessor
                 )));
         ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(1);
         when(context.getExecutorService()).thenReturn(executorService);
@@ -109,8 +106,8 @@ public class LinearHuntRunTest {
         return responseJson;
     }
 
-    private JsonNode postHuntStart(String runId) throws IOException {
-        String json = String.format("{\"eventType\":\"HuntStart\",\"runId\":\"%s\"}", runId);
+    private JsonNode postHuntStart() throws IOException {
+        String json = "{\"eventType\":\"HuntStart\"}";
         Representation representation = new JsonRepresentation(json);
         Request request = new Request(Method.POST, "/events", representation);
         Response response = router.handle(request);
@@ -121,8 +118,8 @@ public class LinearHuntRunTest {
         return responseJson;
     }
 
-    private JsonNode postFullRelease(String runId, String puzzleId) throws IOException {
-        String json = String.format("{\"eventType\":\"FullRelease\",\"runId\":\"%s\",\"puzzleId\":\"%s\"}", runId, puzzleId);
+    private JsonNode postFullRelease(String puzzleId) throws IOException {
+        String json = String.format("{\"eventType\":\"FullRelease\",\"puzzleId\":\"%s\"}", puzzleId);
         Representation representation = new JsonRepresentation(json);
         Request request = new Request(Method.POST, "/events", representation);
         Response response = router.handle(request);
@@ -177,7 +174,7 @@ public class LinearHuntRunTest {
         json = getVisibility("testerteam","puzzle2");
         assertEquals("INVISIBLE", json.get("status").asText());
 
-        postHuntStart("development");
+        postHuntStart();
 
         json = getVisibility("testerteam","puzzle1");
         assertEquals("UNLOCKED", json.get("status").asText());
@@ -201,7 +198,7 @@ public class LinearHuntRunTest {
         json = getVisibility("testerteam", "puzzle5");
         assertEquals("INVISIBLE", json.get("status").asText());
 
-        postFullRelease("development", "puzzle5");
+        postFullRelease("puzzle5");
         json = getVisibility("testerteam", "puzzle5");
         assertEquals("UNLOCKED", json.get("status").asText());
     }

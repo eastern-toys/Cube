@@ -144,7 +144,10 @@ public class ScoreExampleHuntDefinition implements HuntDefinition {
                     teamId,
                     ScoreProperty.class,
                     ScoreProperty.create(score.get()));
-            eventProcessor.process(new ScoreUpdateEvent(teamId, score.get()));
+            eventProcessor.process(ScoreUpdateEvent.builder()
+                    .setTeamId(teamId)
+                    .setScore(score.get())
+                    .build());
         }
     }
 
@@ -171,21 +174,20 @@ public class ScoreExampleHuntDefinition implements HuntDefinition {
         return Optional.of(timeScore + puzzleScore);
     }
 
-    private static class ScoreUpdateEvent implements Event {
-        private final String teamId;
-        private final int score;
-
-        public ScoreUpdateEvent(String teamId, int score) {
-            this.teamId = teamId;
-            this.score = score;
+    @AutoValue
+    static abstract class ScoreUpdateEvent extends Event {
+        @AutoValue.Builder
+        static abstract class Builder {
+            abstract Builder setTeamId(String teamId);
+            abstract Builder setScore(int score);
+            abstract ScoreUpdateEvent build();
         }
 
-        public String getTeamId() {
-            return teamId;
+        static Builder builder() {
+            return new AutoValue_ScoreExampleHuntDefinition_ScoreUpdateEvent.Builder();
         }
 
-        public int getScore() {
-            return score;
-        }
+        abstract String getTeamId();
+        abstract int getScore();
     }
 }

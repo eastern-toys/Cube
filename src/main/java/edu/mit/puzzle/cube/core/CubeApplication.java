@@ -7,7 +7,6 @@ import edu.mit.puzzle.cube.core.db.ConnectionFactory;
 import edu.mit.puzzle.cube.core.environments.DevelopmentEnvironment;
 import edu.mit.puzzle.cube.core.environments.ServiceEnvironment;
 import edu.mit.puzzle.cube.core.events.CompositeEventProcessor;
-import edu.mit.puzzle.cube.core.events.EventFactory;
 import edu.mit.puzzle.cube.core.events.PeriodicTimerEvent;
 import edu.mit.puzzle.cube.core.model.HuntStatusStore;
 import edu.mit.puzzle.cube.core.model.SubmissionStore;
@@ -33,7 +32,6 @@ public class CubeApplication extends Application {
 
     private final SubmissionStore submissionStore;
     private final HuntStatusStore huntStatusStore;
-    private final EventFactory eventFactory;
     private final CompositeEventProcessor eventProcessor;
 
     private final Service timingEventService;
@@ -44,7 +42,6 @@ public class CubeApplication extends Application {
 
         ConnectionFactory connectionFactory = serviceEnvironment.getConnectionFactory();
 
-        eventFactory = new EventFactory();
         eventProcessor = new CompositeEventProcessor();
         submissionStore = new SubmissionStore(
                 connectionFactory,
@@ -64,7 +61,7 @@ public class CubeApplication extends Application {
         timingEventService = new AbstractScheduledService() {
             @Override
             protected void runOneIteration() throws Exception {
-                eventProcessor.process(new PeriodicTimerEvent());
+                eventProcessor.process(PeriodicTimerEvent.builder().build());
             }
 
             @Override
@@ -83,7 +80,6 @@ public class CubeApplication extends Application {
         //Put dependencies into the router context so that the Resource handlers can access them
         router.getContext().getAttributes().put(AbstractCubeResource.SUBMISSION_STORE_KEY, submissionStore);
         router.getContext().getAttributes().put(AbstractCubeResource.HUNT_STATUS_STORE_KEY, huntStatusStore);
-        router.getContext().getAttributes().put(AbstractCubeResource.EVENT_FACTORY_KEY, eventFactory);
         router.getContext().getAttributes().put(AbstractCubeResource.EVENT_PROCESSOR_KEY, eventProcessor);
 
         //Define routes
