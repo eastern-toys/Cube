@@ -1,5 +1,6 @@
 package edu.mit.puzzle.cube.core;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.AbstractScheduledService;
 import com.google.common.util.concurrent.Service;
 
@@ -24,6 +25,7 @@ import org.restlet.Component;
 import org.restlet.Restlet;
 import org.restlet.data.Protocol;
 import org.restlet.routing.Router;
+import org.restlet.service.CorsService;
 
 import java.sql.SQLException;
 import java.util.concurrent.TimeUnit;
@@ -39,6 +41,11 @@ public class CubeApplication extends Application {
     public CubeApplication() throws SQLException {
         HuntDefinition huntDefinition = new LinearExampleHuntDefinition();
         ServiceEnvironment serviceEnvironment = new DevelopmentEnvironment(huntDefinition);
+
+        CorsService corsService = new CorsService();
+        corsService.setAllowedOrigins(ImmutableSet.of("*"));
+        corsService.setAllowedCredentials(true);
+        getServices().add(corsService);
 
         ConnectionFactory connectionFactory = serviceEnvironment.getConnectionFactory();
 
