@@ -1,10 +1,18 @@
 package edu.mit.puzzle.cube.huntimpl.scoreexample;
 
-import com.google.common.collect.ImmutableList;
+import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+
 import edu.mit.puzzle.cube.core.HuntDefinition;
-import edu.mit.puzzle.cube.core.events.*;
+import edu.mit.puzzle.cube.core.events.CompositeEventProcessor;
+import edu.mit.puzzle.cube.core.events.Event;
+import edu.mit.puzzle.cube.core.events.EventProcessor;
+import edu.mit.puzzle.cube.core.events.FullReleaseEvent;
+import edu.mit.puzzle.cube.core.events.HuntStartEvent;
+import edu.mit.puzzle.cube.core.events.PeriodicTimerEvent;
+import edu.mit.puzzle.cube.core.events.SubmissionCompleteEvent;
+import edu.mit.puzzle.cube.core.events.VisibilityChangeEvent;
 import edu.mit.puzzle.cube.core.model.HuntStatusStore;
 import edu.mit.puzzle.cube.core.model.Submission;
 import edu.mit.puzzle.cube.core.model.SubmissionStatus;
@@ -113,7 +121,10 @@ public class ScoreExampleHuntDefinition implements HuntDefinition {
         Optional<Integer> score = calculateTeamScore(teamId, huntStatusStore);
         if (score.isPresent()) {
             huntStatusStore.setTeamProperty(teamId, "score", score.get());
-            eventProcessor.process(new ScoreUpdateEvent(teamId, score.get()));
+            eventProcessor.process(ScoreUpdateEvent.builder()
+                    .setTeamId(teamId)
+                    .setScore(score.get())
+                    .build());
         }
     }
 
@@ -140,21 +151,20 @@ public class ScoreExampleHuntDefinition implements HuntDefinition {
         return Optional.of(timeScore + puzzleScore);
     }
 
-    private static class ScoreUpdateEvent implements Event {
-        private final String teamId;
-        private final int score;
-
-        public ScoreUpdateEvent(String teamId, int score) {
-            this.teamId = teamId;
-            this.score = score;
+    @AutoValue
+    static abstract class ScoreUpdateEvent extends Event {
+        @AutoValue.Builder
+        static abstract class Builder {
+            abstract Builder setTeamId(String teamId);
+            abstract Builder setScore(int score);
+            abstract ScoreUpdateEvent build();
         }
 
-        public String getTeamId() {
-            return teamId;
+        static Builder builder() {
+            return new AutoValue_ScoreExampleHuntDefinition_ScoreUpdateEvent.Builder();
         }
 
-        public int getScore() {
-            return score;
-        }
+        abstract String getTeamId();
+        abstract int getScore();
     }
 }
