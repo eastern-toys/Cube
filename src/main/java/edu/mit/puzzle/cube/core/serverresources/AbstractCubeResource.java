@@ -17,7 +17,6 @@ public abstract class AbstractCubeResource extends ServerResource {
 
     protected SubmissionStore submissionStore;
     protected HuntStatusStore huntStatusStore;
-    protected EventFactory eventFactory;
     protected EventProcessor<Event> eventProcessor;
 
     public AbstractCubeResource() {
@@ -26,7 +25,6 @@ public abstract class AbstractCubeResource extends ServerResource {
     public void doInit() {
         this.submissionStore = (SubmissionStore) getContext().getAttributes().get(SUBMISSION_STORE_KEY);
         this.huntStatusStore = (HuntStatusStore) getContext().getAttributes().get(HUNT_STATUS_STORE_KEY);
-        this.eventFactory = (EventFactory) getContext().getAttributes().get(EVENT_FACTORY_KEY);
         this.eventProcessor = (EventProcessor<Event>) getContext().getAttributes().get(EVENT_PROCESSOR_KEY);
     }
 }

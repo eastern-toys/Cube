@@ -112,7 +112,9 @@ public class SubmissionStore {
 
         if (updated && status.isTerminal()) {
             Submission submission = this.getSubmission(submissionId).get();
-            eventProcessor.process(new SubmissionCompleteEvent(submission));
+            eventProcessor.process(SubmissionCompleteEvent.builder()
+                    .setSubmission(submission)
+                    .build());
         }
 
         return updated;

@@ -1,12 +1,19 @@
 package edu.mit.puzzle.cube.core.events;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import com.fasterxml.jackson.annotation.JsonTypeName;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.google.auto.value.AutoValue;
 
-public class PeriodicTimerEvent implements Event {
+@AutoValue
+@JsonDeserialize(builder = AutoValue_PeriodicTimerEvent.Builder.class)
+@JsonTypeName("PeriodicTimer")
+public abstract class PeriodicTimerEvent extends Event {
+    @AutoValue.Builder
+    public static abstract class Builder {
+        public abstract PeriodicTimerEvent build();
+    }
 
-    public static final String EVENT_TYPE = "PeriodicTimer";
-
-    public PeriodicTimerEvent() {
-
+    public static Builder builder() {
+        return new AutoValue_PeriodicTimerEvent.Builder();
     }
 }

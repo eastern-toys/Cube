@@ -241,11 +241,13 @@ public class HuntStatusStore {
                     "INSERT INTO visibility_history (teamId, puzzleId, status, timestamp) VALUES (?, ?, ?, ?)",
                     Lists.newArrayList(teamId, puzzleId, status, clock.instant()));
 
-            VisibilityChangeEvent changeEvent = new VisibilityChangeEvent(Visibility.builder()
-                    .setTeamId(teamId)
-                    .setPuzzleId(puzzleId)
-                    .setStatus(status)
-                    .build());
+            VisibilityChangeEvent changeEvent = VisibilityChangeEvent.builder()
+                    .setVisibility(Visibility.builder()
+                            .setTeamId(teamId)
+                            .setPuzzleId(puzzleId)
+                            .setStatus(status)
+                            .build())
+                    .build();
             eventProcessor.process(changeEvent);
 
             return true;
