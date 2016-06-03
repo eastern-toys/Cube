@@ -1,13 +1,19 @@
 package edu.mit.puzzle.cube.core.events;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import com.fasterxml.jackson.annotation.JsonTypeName;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.google.auto.value.AutoValue;
 
-public class HuntStartEvent implements Event {
-
-    public static final String EVENT_TYPE = "HuntStart";
-
-    public HuntStartEvent() {
-
+@AutoValue
+@JsonDeserialize(builder = AutoValue_HuntStartEvent.Builder.class)
+@JsonTypeName("HuntStart")
+public abstract class HuntStartEvent extends Event {
+    @AutoValue.Builder
+    public static abstract class Builder {
+        public abstract HuntStartEvent build();
     }
 
+    public static Builder builder() {
+        return new AutoValue_HuntStartEvent.Builder();
+    }
 }

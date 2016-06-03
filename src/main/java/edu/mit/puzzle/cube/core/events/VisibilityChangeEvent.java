@@ -1,20 +1,25 @@
 package edu.mit.puzzle.cube.core.events;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeName;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.google.auto.value.AutoValue;
+
 import edu.mit.puzzle.cube.core.model.Visibility;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
-public class VisibilityChangeEvent implements Event {
-
-    public static final String EVENT_TYPE = "VisibilityChange";
-
-    private final Visibility visibility;
-
-    public VisibilityChangeEvent(Visibility visibility) {
-        this.visibility = visibility;
+@AutoValue
+@JsonDeserialize(builder = AutoValue_VisibilityChangeEvent.Builder.class)
+@JsonTypeName("VisibilityChange")
+public abstract class VisibilityChangeEvent extends Event {
+    @AutoValue.Builder
+    public static abstract class Builder {
+        @JsonProperty("visibility") public abstract Builder setVisibility(Visibility visibility);
+        public abstract VisibilityChangeEvent build();
     }
 
-    public Visibility getVisibility() {
-        return visibility;
+    public static Builder builder() {
+        return new AutoValue_VisibilityChangeEvent.Builder();
     }
+
+    @JsonProperty("visibility") public abstract Visibility getVisibility();
 }
