@@ -1,12 +1,18 @@
 package edu.mit.puzzle.cube.core.model;
 
-import com.google.common.collect.*;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.auto.value.AutoValue;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Table;
+
 import edu.mit.puzzle.cube.core.AdjustableClock;
 import edu.mit.puzzle.cube.core.db.ConnectionFactory;
 import edu.mit.puzzle.cube.core.db.InMemorySingleUnsharedConnectionFactory;
 import edu.mit.puzzle.cube.core.events.Event;
 import edu.mit.puzzle.cube.core.events.EventProcessor;
 import edu.mit.puzzle.cube.modules.model.StandardVisibilityStatusSet;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -21,7 +27,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
 
 public class HuntStatusStoreTest {
 
@@ -157,13 +166,29 @@ public class HuntStatusStoreTest {
         assertEquals(visibilityStatusSet.getDefaultVisibilityStatus(), visibilities.get(TEST_PUZZLE_ID_3));
     }
 
-    @Test
-    public void setProperties() {
-        assertTrue(huntStatusStore.getTeamProperties(TEST_TEAM_ID).isEmpty());
+    @AutoValue
+    public abstract static class HuntStatusStoreTestProperty extends Team.Property {
+        static {
+            registerClass(HuntStatusStoreTestProperty.class);
+        }
 
-        assertTrue(huntStatusStore.setTeamProperty(TEST_TEAM_ID, "GENERIC_PROPERTY", "SOME_VALUE"));
-        Map<String,Object> properties = huntStatusStore.getTeamProperties(TEST_TEAM_ID);
-        assertEquals(1, properties.size());
-        assertEquals("SOME_VALUE", properties.get("GENERIC_PROPERTY"));
+        @JsonCreator
+        public static HuntStatusStoreTestProperty create(@JsonProperty("value") String value) {
+            return new AutoValue_HuntStatusStoreTest_HuntStatusStoreTestProperty(value);
+        }
+
+        @JsonProperty("value") public abstract String getValue();
+    }
+
+    @Test
+    public void setTeamProperties() {
+        assertTrue(huntStatusStore.getTeam(TEST_TEAM_ID).getTeamProperties().isEmpty());
+        assertTrue(huntStatusStore.setTeamProperty(
+                TEST_TEAM_ID,
+                HuntStatusStoreTestProperty.class,
+                HuntStatusStoreTestProperty.create("SOME_VALUE")));
+        Team team = huntStatusStore.getTeam(TEST_TEAM_ID);
+        assertEquals(1, team.getTeamProperties().size());
+        assertEquals("SOME_VALUE", team.getTeamProperty(HuntStatusStoreTestProperty.class).getValue());
     }
 }

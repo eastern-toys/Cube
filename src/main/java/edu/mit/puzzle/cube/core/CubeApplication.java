@@ -2,6 +2,7 @@ package edu.mit.puzzle.cube.core;
 
 import com.google.common.util.concurrent.AbstractScheduledService;
 import com.google.common.util.concurrent.Service;
+
 import edu.mit.puzzle.cube.core.db.ConnectionFactory;
 import edu.mit.puzzle.cube.core.environments.DevelopmentEnvironment;
 import edu.mit.puzzle.cube.core.environments.ServiceEnvironment;
@@ -10,8 +11,15 @@ import edu.mit.puzzle.cube.core.events.EventFactory;
 import edu.mit.puzzle.cube.core.events.PeriodicTimerEvent;
 import edu.mit.puzzle.cube.core.model.HuntStatusStore;
 import edu.mit.puzzle.cube.core.model.SubmissionStore;
-import edu.mit.puzzle.cube.core.serverresources.*;
+import edu.mit.puzzle.cube.core.serverresources.AbstractCubeResource;
+import edu.mit.puzzle.cube.core.serverresources.EventsResource;
+import edu.mit.puzzle.cube.core.serverresources.SubmissionResource;
+import edu.mit.puzzle.cube.core.serverresources.SubmissionsResource;
+import edu.mit.puzzle.cube.core.serverresources.TeamResource;
+import edu.mit.puzzle.cube.core.serverresources.VisibilitiesResource;
+import edu.mit.puzzle.cube.core.serverresources.VisibilityResource;
 import edu.mit.puzzle.cube.huntimpl.linearexample.LinearExampleHuntDefinition;
+
 import org.restlet.Application;
 import org.restlet.Component;
 import org.restlet.Restlet;

@@ -1,13 +1,24 @@
 package edu.mit.puzzle.cube.huntimpl.scoreexample;
 
-import com.google.common.collect.ImmutableList;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+
 import edu.mit.puzzle.cube.core.HuntDefinition;
-import edu.mit.puzzle.cube.core.events.*;
+import edu.mit.puzzle.cube.core.events.CompositeEventProcessor;
+import edu.mit.puzzle.cube.core.events.Event;
+import edu.mit.puzzle.cube.core.events.EventProcessor;
+import edu.mit.puzzle.cube.core.events.FullReleaseEvent;
+import edu.mit.puzzle.cube.core.events.HuntStartEvent;
+import edu.mit.puzzle.cube.core.events.PeriodicTimerEvent;
+import edu.mit.puzzle.cube.core.events.SubmissionCompleteEvent;
+import edu.mit.puzzle.cube.core.events.VisibilityChangeEvent;
 import edu.mit.puzzle.cube.core.model.HuntStatusStore;
 import edu.mit.puzzle.cube.core.model.Submission;
 import edu.mit.puzzle.cube.core.model.SubmissionStatus;
+import edu.mit.puzzle.cube.core.model.Team;
 import edu.mit.puzzle.cube.core.model.VisibilityStatusSet;
 import edu.mit.puzzle.cube.modules.model.StandardVisibilityStatusSet;
 
@@ -38,6 +49,20 @@ public class ScoreExampleHuntDefinition implements HuntDefinition {
             this.pointReward = pointReward;
             this.pointPrereq = pointPrereq;
         }
+    }
+
+    @AutoValue
+    public abstract static class ScoreProperty extends Team.Property {
+        static {
+            registerClass(ScoreProperty.class);
+        }
+
+        @JsonCreator
+        public static ScoreProperty create(@JsonProperty("score") int score) {
+            return new AutoValue_ScoreExampleHuntDefinition_ScoreProperty(score);
+        }
+
+        @JsonProperty("score") public abstract int getScore();
     }
 
     @Override
@@ -82,7 +107,10 @@ public class ScoreExampleHuntDefinition implements HuntDefinition {
             boolean changed = huntStatusStore.recordHuntRunStart();
             if (changed) {
                 for (String teamId : huntStatusStore.getTeamIds()) {
-                    huntStatusStore.setTeamProperty(teamId, "score", 0);
+                    huntStatusStore.setTeamProperty(
+                            teamId,
+                            ScoreProperty.class,
+                            ScoreProperty.create(0));
                 }
             }
         });
@@ -112,7 +140,10 @@ public class ScoreExampleHuntDefinition implements HuntDefinition {
     ) {
         Optional<Integer> score = calculateTeamScore(teamId, huntStatusStore);
         if (score.isPresent()) {
-            huntStatusStore.setTeamProperty(teamId, "score", score.get());
+            huntStatusStore.setTeamProperty(
+                    teamId,
+                    ScoreProperty.class,
+                    ScoreProperty.create(score.get()));
             eventProcessor.process(new ScoreUpdateEvent(teamId, score.get()));
         }
     }

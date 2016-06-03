@@ -79,7 +79,7 @@ public class InMemoryConnectionFactory implements ConnectionFactory {
         String createTeamPropertiesTableSql = "CREATE TABLE IF NOT EXISTS team_properties " +
                 "(teamId VARCHAR(20), " +
                 "propertyKey VARCHAR(20), " +
-                "propertyValue BLOB, " +
+                "propertyValue TEXT, " +
                 "PRIMARY KEY(teamId, propertyKey), " +
                 "FOREIGN KEY(teamId) REFERENCES teams(teamId))";
         String createPuzzlesTableSql = "CREATE TABLE IF NOT EXISTS puzzles " +
