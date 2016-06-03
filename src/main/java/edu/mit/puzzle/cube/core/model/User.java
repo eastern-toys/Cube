@@ -1,0 +1,26 @@
+package edu.mit.puzzle.cube.core.model;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.google.auto.value.AutoValue;
+
+import java.util.List;
+
+@AutoValue
+@JsonDeserialize(builder = AutoValue_User.Builder.class)
+public abstract class User {
+    @AutoValue.Builder
+    public static abstract class Builder {
+        @JsonProperty("username") public abstract Builder setUsername(String username);
+        @JsonProperty("permissions") public abstract Builder setPermissions(List<String> permissions);
+
+        public abstract User build();
+    }
+
+    public static Builder builder() {
+        return new AutoValue_User.Builder();
+    }
+
+    @JsonProperty("username") public abstract String getUsername();
+    @JsonProperty("permissions") public abstract List<String> getPermissions();
+}
