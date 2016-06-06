@@ -164,6 +164,10 @@ public class ScoreExampleHuntDefinition implements HuntDefinition {
             return new AutoValue_ScoreExampleHuntDefinition_ScoreUpdateEvent.Builder();
         }
 
+        public String getType() {
+            return "ScoreUpdate";
+        }
+
         abstract String getTeamId();
         abstract int getScore();
     }
