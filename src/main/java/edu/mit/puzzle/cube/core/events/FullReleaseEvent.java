@@ -19,5 +19,9 @@ public abstract class FullReleaseEvent extends Event {
         return new AutoValue_FullReleaseEvent.Builder();
     }
 
+    public String getType() {
+        return "FullRelease";
+    }
+
     @JsonProperty("puzzleId") public abstract String getPuzzleId();
 }

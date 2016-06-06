@@ -1,6 +1,9 @@
 package edu.mit.puzzle.cube.core.model;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -15,6 +18,7 @@ import edu.mit.puzzle.cube.core.events.VisibilityChangeEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.time.Clock;
 import java.util.List;
 import java.util.Map;
@@ -150,25 +154,49 @@ public class HuntStatusStore {
         return resultTable.values().stream().map(o -> (String) o).collect(Collectors.toSet());
     }
 
-    public Map<String,Object> getTeamProperties(String teamId) {
-        Table<Integer, String, Object> resultTable = DatabaseHelper.query(
+    public Team getTeam(String teamId) {
+        Table<Integer, String, Object> teamPropertiesResults = DatabaseHelper.query(
                 connectionFactory,
                 "SELECT propertyKey, propertyValue FROM team_properties " +
                         "WHERE teamId = ?",
                 Lists.newArrayList(teamId)
         );
 
-        ImmutableMap.Builder<String,Object> mapBuilder = ImmutableMap.builder();
-        for (Map<String,Object> rowMap : resultTable.rowMap().values()) {
+        ImmutableMap.Builder<String, Team.Property> teamProperties = ImmutableMap.builder();
+        for (Map<String,Object> rowMap : teamPropertiesResults.rowMap().values()) {
             String key = (String) rowMap.get("propertyKey");
-            Object value = rowMap.get("propertyValue");
-            mapBuilder.put(key, value);
+            String value = (String) rowMap.get("propertyValue");
+            Class<? extends Team.Property> propertyClass = Team.Property.getClass(key);
+            try {
+                Team.Property property = new ObjectMapper().readValue(value, propertyClass);
+                teamProperties.put(key, property);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
 
-        return mapBuilder.build();
+        return Team.builder()
+                .setTeamId(teamId)
+                .setTeamProperties(teamProperties.build())
+                .build();
     }
 
-    public boolean setTeamProperty(String teamId, String propertyKey, Object propertyValue) {
+    public boolean setTeamProperty(
+            String teamId,
+            Class<? extends Team.Property> propertyClass,
+            Team.Property property) {
+        String propertyKey = propertyClass.getSimpleName();
+        Preconditions.checkArgument(
+                propertyClass.isInstance(property),
+                "Team property is not an instance of %s",
+                propertyKey);
+        String propertyValue;
+        try {
+            propertyValue = new ObjectMapper().writeValueAsString(property);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+
         Optional<Integer> generatedId = DatabaseHelper.insert(
                 connectionFactory,
                 "INSERT OR IGNORE INTO team_properties (teamId, propertyKey, propertyValue) VALUES (?,?,?)",
