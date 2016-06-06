@@ -15,8 +15,8 @@ import edu.mit.puzzle.cube.core.events.Event;
 import edu.mit.puzzle.cube.core.events.EventProcessor;
 import edu.mit.puzzle.cube.core.events.VisibilityChangeEvent;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.time.Clock;
@@ -30,7 +30,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class HuntStatusStore {
 
-    private static Logger LOGGER = LogManager.getLogger(HuntStatusStore.class);
+    private static Logger LOGGER = LoggerFactory.getLogger(HuntStatusStore.class);
 
     private final ConnectionFactory connectionFactory;
     private final Clock clock;

@@ -3,13 +3,15 @@ package edu.mit.puzzle.cube.core.model;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Table;
+
 import edu.mit.puzzle.cube.core.db.ConnectionFactory;
 import edu.mit.puzzle.cube.core.db.DatabaseHelper;
 import edu.mit.puzzle.cube.core.events.Event;
 import edu.mit.puzzle.cube.core.events.EventProcessor;
 import edu.mit.puzzle.cube.core.events.SubmissionCompleteEvent;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -23,7 +25,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class SubmissionStore {
 
-    private static Logger LOGGER = LogManager.getLogger(SubmissionStore.class);
+    private static Logger LOGGER = LoggerFactory.getLogger(SubmissionStore.class);
     private static DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSX");
 
     private final ConnectionFactory connectionFactory;
