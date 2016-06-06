@@ -1,5 +1,6 @@
 package edu.mit.puzzle.cube.core.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.auto.value.AutoValue;
 
@@ -19,7 +20,18 @@ public abstract class PostResult {
         return new AutoValue_PostResult.Builder();
     }
 
-    @Nullable @JsonProperty("created") public abstract Boolean getCreated();
-    @Nullable @JsonProperty("processed") public abstract Boolean getProcessed();
-    @Nullable @JsonProperty("updated") public abstract Boolean getUpdated();
+    @Nullable
+    @JsonProperty("created")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public abstract Boolean getCreated();
+
+    @Nullable
+    @JsonProperty("processed")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public abstract Boolean getProcessed();
+
+    @Nullable
+    @JsonProperty("updated")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public abstract Boolean getUpdated();
 }
