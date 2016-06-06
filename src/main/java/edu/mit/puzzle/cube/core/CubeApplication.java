@@ -1,5 +1,6 @@
 package edu.mit.puzzle.cube.core;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.AbstractScheduledService;
 import com.google.common.util.concurrent.Service;
@@ -20,11 +21,26 @@ import edu.mit.puzzle.cube.core.serverresources.VisibilitiesResource;
 import edu.mit.puzzle.cube.core.serverresources.VisibilityResource;
 import edu.mit.puzzle.cube.huntimpl.linearexample.LinearExampleHuntDefinition;
 
+import org.apache.shiro.SecurityUtils;
+import org.apache.shiro.authc.AuthenticationException;
+import org.apache.shiro.authc.UsernamePasswordToken;
+import org.apache.shiro.authz.Permission;
+import org.apache.shiro.authz.permission.WildcardPermission;
+import org.apache.shiro.mgt.DefaultSecurityManager;
+import org.apache.shiro.mgt.SecurityManager;
+import org.apache.shiro.realm.SimpleAccountRealm;
+import org.apache.shiro.subject.Subject;
 import org.restlet.Application;
 import org.restlet.Component;
+import org.restlet.Request;
+import org.restlet.Response;
 import org.restlet.Restlet;
+import org.restlet.data.ChallengeResponse;
+import org.restlet.data.ChallengeScheme;
 import org.restlet.data.Protocol;
 import org.restlet.routing.Router;
+import org.restlet.security.ChallengeAuthenticator;
+import org.restlet.security.Verifier;
 import org.restlet.service.CorsService;
 
 import java.sql.SQLException;
@@ -39,6 +55,10 @@ public class CubeApplication extends Application {
     private final Service timingEventService;
 
     public CubeApplication() throws SQLException {
+        setStatusService(new CubeStatusService());
+
+        setupAuthentication();
+
         HuntDefinition huntDefinition = new LinearExampleHuntDefinition();
         ServiceEnvironment serviceEnvironment = new DevelopmentEnvironment(huntDefinition);
 
@@ -79,6 +99,25 @@ public class CubeApplication extends Application {
         timingEventService.startAsync();
     }
 
+    private void setupAuthentication() {
+        // TODO: replace this with a JdbcRealm backed by our database
+        SimpleAccountRealm realm = new SimpleAccountRealm();
+        realm.addRole("admin");
+        realm.addRole("writingteam");
+        realm.addAccount("adminuser", "adminpassword", "admin");
+        realm.addAccount("writingteamuser", "writingteampassword", "writingteam");
+        realm.setRolePermissionResolver((String role) -> {
+            switch (role) {
+            case "admin":
+                return ImmutableList.of(new WildcardPermission("*"));
+            }
+            return ImmutableList.<Permission>of();
+        });
+
+        SecurityManager securityManager = new DefaultSecurityManager(realm);
+        SecurityUtils.setSecurityManager(securityManager);
+    }
+
     @Override
     public synchronized Restlet createInboundRoot() {
         // Create a router Restlet that routes each call to a new instance of HelloWorldResource.
@@ -97,7 +136,31 @@ public class CubeApplication extends Application {
         router.attach("/events", EventsResource.class);
         router.attach("/teams/{id}", TeamResource.class);
 
-        return router;
+        // Create an authenticator for all routes.
+        ChallengeAuthenticator authenticator = new ChallengeAuthenticator(
+                null,
+                ChallengeScheme.HTTP_BASIC,
+                "Cube"
+        );
+        authenticator.setVerifier((Request request, Response response) -> {
+            Subject subject = SecurityUtils.getSubject();
+            if (!subject.isAuthenticated()) {
+                ChallengeResponse challengeResponse = request.getChallengeResponse();
+                if (challengeResponse == null) {
+                    throw new AuthenticationException(
+                            "Credentials are required, but none were provided.");
+                }
+                UsernamePasswordToken token = new UsernamePasswordToken(
+                        challengeResponse.getIdentifier(),
+                        challengeResponse.getSecret()
+                );
+                subject.login(token);
+            }
+            return Verifier.RESULT_VALID;
+        });
+        authenticator.setNext(router);
+
+        return authenticator;
     }
 
     public static void main (String[] args) throws Exception {

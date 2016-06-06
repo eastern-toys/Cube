@@ -2,6 +2,7 @@ package edu.mit.puzzle.cube.core.exampleruns;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
 import edu.mit.puzzle.cube.core.HuntDefinition;
@@ -20,6 +21,14 @@ import edu.mit.puzzle.cube.core.serverresources.VisibilitiesResource;
 import edu.mit.puzzle.cube.core.serverresources.VisibilityResource;
 import edu.mit.puzzle.cube.huntimpl.linearexample.LinearExampleHuntDefinition;
 
+import org.apache.shiro.SecurityUtils;
+import org.apache.shiro.authc.UsernamePasswordToken;
+import org.apache.shiro.authz.Permission;
+import org.apache.shiro.authz.permission.WildcardPermission;
+import org.apache.shiro.mgt.DefaultSecurityManager;
+import org.apache.shiro.mgt.SecurityManager;
+import org.apache.shiro.realm.SimpleAccountRealm;
+import org.apache.shiro.subject.Subject;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -86,6 +95,21 @@ public class LinearHuntRunTest {
         router.attach("/visibilities/{teamId}/{puzzleId}", VisibilityResource.class);
         router.attach("/events", EventsResource.class);
         router.attach("/teams/{id}", TeamResource.class);
+
+        SimpleAccountRealm realm = new SimpleAccountRealm();
+        realm.addRole("admin");
+        realm.addAccount("adminuser", "adminpassword", "admin");
+        realm.setRolePermissionResolver((String role) -> {
+            switch (role) {
+            case "admin":
+                return ImmutableList.of(new WildcardPermission("*"));
+            }
+            return ImmutableList.<Permission>of();
+        });
+        SecurityManager securityManager = new DefaultSecurityManager(realm);
+        SecurityUtils.setSecurityManager(securityManager);
+        Subject subject = SecurityUtils.getSubject();
+        subject.login(new UsernamePasswordToken("adminuser", "adminpassword"));
     }
 
     private JsonNode getAllSubmissions() throws IOException {
