@@ -1,12 +1,25 @@
 package edu.mit.puzzle.cube.core.db;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+
 import edu.mit.puzzle.cube.core.model.SubmissionStatus;
 import edu.mit.puzzle.cube.core.model.VisibilityStatusSet;
 
-import java.sql.*;
+import org.apache.shiro.crypto.hash.DefaultHashService;
+import org.apache.shiro.crypto.hash.Hash;
+import org.apache.shiro.crypto.hash.HashRequest;
+import org.apache.shiro.util.ByteSource;
+import org.sqlite.SQLiteDataSource;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import javax.sql.DataSource;
 
 /**
  * An implementation of ConnectionFactory that wraps an SQLite in-memory database.
@@ -57,6 +70,13 @@ public class InMemoryConnectionFactory implements ConnectionFactory {
         }
     }
 
+    @Override
+    public DataSource getDataSource() {
+        SQLiteDataSource dataSource = new SQLiteDataSource();
+        dataSource.setUrl("jdbc:sqlite:file::memory:?cache=shared");
+        return dataSource;
+    }
+
     //The initial configuration takes in a list of team ids and puzzle ids to preload the
     //database. For a production off-box database, this wouldn't be necessary because you'd
     //just load the data there, but for an in-memory database, we need to set it up in code.
@@ -105,11 +125,21 @@ public class InMemoryConnectionFactory implements ConnectionFactory {
                 "PRIMARY KEY(visibilityHistoryId ASC), " +
                 "FOREIGN KEY(teamId) REFERENCES teams(teamId), " +
                 "FOREIGN KEY(puzzleId) REFERENCES puzzles(puzzleId))";
+        String createUsersTableSql = "CREATE TABLE IF NOT EXISTS users " +
+                "(username VARCHAR(40), password VARCHAR(40), password_salt VARCHAR(40), " +
+                "PRIMARY KEY(username))";
+        String createRolesPermissionsTableSql = "CREATE TABLE IF NOT EXISTS roles_permissions " +
+                "(role_name VARCHAR(40), permission VARCHAR(40))";
+        String createUserRolesTableSql = "CREATE TABLE IF NOT EXISTS user_roles " +
+                "(username VARCHAR(40), role_name VARCHAR(40), " +
+                "FOREIGN KEY(username) REFERENCES users(username), " +
+                "FOREIGN KEY(role_name) REFERENCES roles_permissions(role_name))";
 
         List<String> createTableSqls = Lists.newArrayList(
                 createRunTableSql,
                 createTeamsTableSql, createTeamPropertiesTableSql, createPuzzlesTableSql,
-                createSubmissionsTableSql, createVisibilitiesTableSql, createVisibilityHistoriesTableSql);
+                createSubmissionsTableSql, createVisibilitiesTableSql, createVisibilityHistoriesTableSql,
+                createUsersTableSql, createUserRolesTableSql, createRolesPermissionsTableSql);
         for (String createTableSql : createTableSqls) {
             DatabaseHelper.update(
                     this,
@@ -132,6 +162,41 @@ public class InMemoryConnectionFactory implements ConnectionFactory {
                 .map(id -> Lists.<Object>newArrayList(id))
                 .collect(Collectors.toList());
         DatabaseHelper.insertBatch(this, insertPuzzleSql, parameterLists);
+
+        String insertRolesPermissionsSql =
+                "INSERT INTO roles_permissions (role_name, permission) VALUES (?,?)";
+        DatabaseHelper.insertBatch(this, insertRolesPermissionsSql, ImmutableList.of(
+                ImmutableList.of("admin", "*"),
+                ImmutableList.of("writingteam", "submissions:*"),
+                ImmutableList.of("writingteam", "visibilities:*")
+        ));
+
+        String insertUsersSql =
+                "INSERT INTO users (username, password, password_salt) VALUES (?,?,?)";
+        DefaultHashService hashService = new DefaultHashService();
+        hashService.setHashAlgorithmName("SHA-512");
+        parameterLists = ImmutableList.of("admin", "writingteam").stream()
+                .map(id -> {
+                    ByteSource saltByteSource = hashService.getRandomNumberGenerator().nextBytes();
+                    String salt = Base64.getEncoder().encodeToString(saltByteSource.getBytes());
+                    Hash hash = hashService.computeHash(new HashRequest.Builder()
+                            .setSource(id + "password")
+                            .setSalt(salt)
+                            .build()
+                    );
+                    return ImmutableList.<Object>of(
+                            id + "user",
+                            hash.toHex(),
+                            salt);
+                })
+                .collect(Collectors.toList());
+        DatabaseHelper.insertBatch(this, insertUsersSql, parameterLists);
+
+        String insertUserRolesSql = "INSERT INTO user_roles (username, role_name) VALUES (?,?)";
+        DatabaseHelper.insertBatch(this, insertUserRolesSql, ImmutableList.of(
+                ImmutableList.of("adminuser", "admin"),
+                ImmutableList.of("writingteamuser", "writingteam")
+        ));
     }
 
 }

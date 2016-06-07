@@ -3,6 +3,8 @@ package edu.mit.puzzle.cube.core.db;
 import java.sql.Connection;
 import java.sql.SQLException;
 
+import javax.sql.DataSource;
+
 /**
  * A ConnectionFactory provides a Connection to the SQL database that contains
  * data about the hunt, runs of the hunt, and unlock statuses of teams on each run.
@@ -22,5 +24,7 @@ public interface ConnectionFactory {
      * @throws SQLException
      */
     Connection getConnection() throws SQLException;
+
+    DataSource getDataSource();
 
 }
