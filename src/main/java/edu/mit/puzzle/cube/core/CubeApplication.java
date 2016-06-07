@@ -106,6 +106,11 @@ public class CubeApplication extends Application {
             switch (role) {
             case "admin":
                 return ImmutableList.of(new WildcardPermission("*"));
+            case "writingteam":
+                return ImmutableList.of(
+                        new WildcardPermission("submissions:*"),
+                        new WildcardPermission("visibilities:*")
+                );
             }
             return ImmutableList.<Permission>of();
         });
@@ -133,6 +138,7 @@ public class CubeApplication extends Application {
         router.attach("/teams", TeamsResource.class);
         router.attach("/teams/{id}", TeamResource.class);
         router.attach("/users/{id}", UserResource.class);
+        router.attach("/authorized", AuthorizedResource.class);
 
         // Create an authenticator for all routes.
         ChallengeAuthenticator authenticator = new ChallengeAuthenticator(
@@ -148,7 +154,7 @@ public class CubeApplication extends Application {
             Subject subject = SecurityUtils.getSubject();
 
             // We don't want any sessionization for our stateless RESTful API.
-            if (subject.isAuthenticated()) {
+            if (subject.isAuthenticated() && subject.getSession(false) != null) {
                 subject.logout();
             }
 

@@ -60,9 +60,6 @@ public class CubeStatusService extends StatusService {
     @Override
     public Status toStatus(Throwable throwable, Resource resource) {
         corsResponseHelper.addCorsResponseHeaders(resource.getRequest(), resource.getResponse());
-        if (throwable instanceof ResourceException) {
-            return toStatus(throwable.getCause());
-        }
         return toStatus(throwable);
     }
 
@@ -73,13 +70,20 @@ public class CubeStatusService extends StatusService {
     }
 
     private Status toStatus(Throwable throwable) {
-        int code = 500;
-        if (throwable instanceof AuthenticationException) {
-            code = 401;
-        } else if (throwable instanceof AuthorizationException) {
-            code = 403;
+        if (throwable instanceof ResourceException) {
+            if (throwable.getCause() != null) {
+                return toStatus(throwable.getCause());
+            }
+            return ((ResourceException) throwable).getStatus();
         }
-        return new Status(code, throwable, throwable.getMessage());
+
+        Status status = Status.SERVER_ERROR_INTERNAL;
+        if (throwable instanceof AuthenticationException) {
+            status = Status.CLIENT_ERROR_UNAUTHORIZED;
+        } else if (throwable instanceof AuthorizationException) {
+            status = Status.CLIENT_ERROR_FORBIDDEN;
+        }
+        return new Status(status, throwable.getMessage());
     }
 
     @Override
@@ -87,7 +91,7 @@ public class CubeStatusService extends StatusService {
         try {
             return new JsonRepresentation(MAPPER.writeValueAsString(JsonStatus.builder()
                     .setCode(status.getCode())
-                    .setDescription(status.getReasonPhrase())
+                    .setDescription(status.getDescription())
                     .build()));
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
