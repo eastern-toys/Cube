@@ -1,7 +1,5 @@
 package edu.mit.puzzle.cube.core.serverresources;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-
 import edu.mit.puzzle.cube.core.model.PostResult;
 import edu.mit.puzzle.cube.core.model.Visibility;
 
@@ -27,7 +25,7 @@ public class VisibilityResource extends AbstractCubeResource {
     }
 
     @Get
-    public Visibility handleGet() throws JsonProcessingException {
+    public Visibility handleGet() {
         String teamId = getTeamId();
         String puzzleId = getPuzzleId();
         return Visibility.builder()
@@ -38,7 +36,7 @@ public class VisibilityResource extends AbstractCubeResource {
     }
 
     @Post
-    public PostResult handlePost(Visibility visibility) throws JsonProcessingException {
+    public PostResult handlePost(Visibility visibility) {
         String teamId = getTeamId();
         String puzzleId = getPuzzleId();
 

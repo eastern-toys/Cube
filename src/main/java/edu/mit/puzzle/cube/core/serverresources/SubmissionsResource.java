@@ -1,7 +1,5 @@
 package edu.mit.puzzle.cube.core.serverresources;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-
 import edu.mit.puzzle.cube.core.model.PostResult;
 import edu.mit.puzzle.cube.core.model.Submission;
 import edu.mit.puzzle.cube.core.model.Submissions;
@@ -19,7 +17,7 @@ public class SubmissionsResource extends AbstractCubeResource {
     }
 
     @Post
-    public PostResult handlePost(Submission submission) throws JsonProcessingException {
+    public PostResult handlePost(Submission submission) {
         String visibilityStatus = huntStatusStore.getVisibility(
                 submission.getTeamId(),
                 submission.getPuzzleId());

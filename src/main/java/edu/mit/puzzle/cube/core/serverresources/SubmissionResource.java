@@ -1,7 +1,5 @@
 package edu.mit.puzzle.cube.core.serverresources;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-
 import edu.mit.puzzle.cube.core.model.PostResult;
 import edu.mit.puzzle.cube.core.model.Submission;
 
@@ -26,7 +24,7 @@ public class SubmissionResource extends AbstractCubeResource {
     }
 
     @Get
-    public Submission handleGet() throws JsonProcessingException {
+    public Submission handleGet() {
         int id = getId();
         Optional<Submission> submission = submissionStore.getSubmission(id);
 
@@ -39,7 +37,7 @@ public class SubmissionResource extends AbstractCubeResource {
     }
 
     @Post
-    public PostResult handlePost(Submission submission) throws JsonProcessingException {
+    public PostResult handlePost(Submission submission) {
         int id = getId();
         if (submission.getStatus() == null) {
             return PostResult.builder().setUpdated(false).build();
