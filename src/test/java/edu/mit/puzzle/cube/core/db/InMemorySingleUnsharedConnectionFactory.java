@@ -29,6 +29,8 @@ public class InMemorySingleUnsharedConnectionFactory extends InMemoryConnectionF
             Class.forName("org.sqlite.JDBC");
             Connection connection = new ForceCloseOnlyConnection(DriverManager.getConnection("jdbc:sqlite:file::memory:"));
 
+            connection.createStatement().executeUpdate("PRAGMA foreign_keys = ON");
+
             return connection;
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
