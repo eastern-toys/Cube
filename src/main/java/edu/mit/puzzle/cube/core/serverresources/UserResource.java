@@ -17,9 +17,6 @@ public class UserResource extends AbstractCubeResource {
     @Get
     public User handleGet() {
         String id = getId();
-        // TODO: introduce a real users table, instead of assuming all users exist.
-        return User.builder()
-                .setUsername(id)
-                .build();
+        return userStore.getUser(id);
     }
 }

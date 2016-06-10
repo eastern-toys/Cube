@@ -11,6 +11,7 @@ import edu.mit.puzzle.cube.core.events.CompositeEventProcessor;
 import edu.mit.puzzle.cube.core.events.PeriodicTimerEvent;
 import edu.mit.puzzle.cube.core.model.HuntStatusStore;
 import edu.mit.puzzle.cube.core.model.SubmissionStore;
+import edu.mit.puzzle.cube.core.model.UserStore;
 import edu.mit.puzzle.cube.core.serverresources.*;
 import edu.mit.puzzle.cube.huntimpl.linearexample.LinearExampleHuntDefinition;
 
@@ -43,6 +44,7 @@ public class CubeApplication extends Application {
 
     private final SubmissionStore submissionStore;
     private final HuntStatusStore huntStatusStore;
+    private final UserStore userStore;
     private final CompositeEventProcessor eventProcessor;
 
     private final Service timingEventService;
@@ -72,6 +74,9 @@ public class CubeApplication extends Application {
                 connectionFactory,
                 huntDefinition.getVisibilityStatusSet(),
                 eventProcessor
+        );
+        userStore = new UserStore(
+                connectionFactory
         );
 
         huntDefinition.addToEventProcessor(
@@ -112,6 +117,7 @@ public class CubeApplication extends Application {
         //Put dependencies into the router context so that the Resource handlers can access them
         router.getContext().getAttributes().put(AbstractCubeResource.SUBMISSION_STORE_KEY, submissionStore);
         router.getContext().getAttributes().put(AbstractCubeResource.HUNT_STATUS_STORE_KEY, huntStatusStore);
+        router.getContext().getAttributes().put(AbstractCubeResource.USER_STORE_KEY, userStore);
         router.getContext().getAttributes().put(AbstractCubeResource.EVENT_PROCESSOR_KEY, eventProcessor);
 
         //Define routes
