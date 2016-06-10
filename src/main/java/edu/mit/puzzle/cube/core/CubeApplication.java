@@ -11,13 +11,7 @@ import edu.mit.puzzle.cube.core.events.CompositeEventProcessor;
 import edu.mit.puzzle.cube.core.events.PeriodicTimerEvent;
 import edu.mit.puzzle.cube.core.model.HuntStatusStore;
 import edu.mit.puzzle.cube.core.model.SubmissionStore;
-import edu.mit.puzzle.cube.core.serverresources.AbstractCubeResource;
-import edu.mit.puzzle.cube.core.serverresources.EventsResource;
-import edu.mit.puzzle.cube.core.serverresources.SubmissionResource;
-import edu.mit.puzzle.cube.core.serverresources.SubmissionsResource;
-import edu.mit.puzzle.cube.core.serverresources.TeamResource;
-import edu.mit.puzzle.cube.core.serverresources.VisibilitiesResource;
-import edu.mit.puzzle.cube.core.serverresources.VisibilityResource;
+import edu.mit.puzzle.cube.core.serverresources.*;
 import edu.mit.puzzle.cube.huntimpl.linearexample.LinearExampleHuntDefinition;
 
 import org.apache.shiro.SecurityUtils;
@@ -35,6 +29,7 @@ import org.restlet.Response;
 import org.restlet.Restlet;
 import org.restlet.data.ChallengeResponse;
 import org.restlet.data.ChallengeScheme;
+import org.restlet.data.Method;
 import org.restlet.data.Protocol;
 import org.restlet.routing.Router;
 import org.restlet.security.ChallengeAuthenticator;
@@ -53,7 +48,13 @@ public class CubeApplication extends Application {
     private final Service timingEventService;
 
     public CubeApplication() throws SQLException {
-        setStatusService(new CubeStatusService());
+        CorsService corsService = new CorsService();
+        corsService.setAllowedOrigins(ImmutableSet.of("*", "http://localhost:8081"));
+        corsService.setAllowedCredentials(true);
+        corsService.setAllowingAllRequestedHeaders(true);
+        getServices().add(corsService);
+
+        setStatusService(new CubeStatusService(corsService));
 
         HuntDefinition huntDefinition = new LinearExampleHuntDefinition();
         ServiceEnvironment serviceEnvironment = new DevelopmentEnvironment(huntDefinition);
@@ -61,11 +62,6 @@ public class CubeApplication extends Application {
         ConnectionFactory connectionFactory = serviceEnvironment.getConnectionFactory();
 
         setupAuthentication(connectionFactory);
-
-        CorsService corsService = new CorsService();
-        corsService.setAllowedOrigins(ImmutableSet.of("*"));
-        corsService.setAllowedCredentials(true);
-        getServices().add(corsService);
 
         eventProcessor = new CompositeEventProcessor();
         submissionStore = new SubmissionStore(
@@ -123,8 +119,12 @@ public class CubeApplication extends Application {
         router.attach("/submissions/{id}", SubmissionResource.class);
         router.attach("/visibilities", VisibilitiesResource.class);
         router.attach("/visibilities/{teamId}/{puzzleId}", VisibilityResource.class);
+        router.attach("/visibilitychanges", VisibilityChangesResource.class);
         router.attach("/events", EventsResource.class);
+        router.attach("/teams", TeamsResource.class);
         router.attach("/teams/{id}", TeamResource.class);
+        router.attach("/users/{id}", UserResource.class);
+        router.attach("/authorized", AuthorizedResource.class);
 
         // Create an authenticator for all routes.
         ChallengeAuthenticator authenticator = new ChallengeAuthenticator(
@@ -133,19 +133,29 @@ public class CubeApplication extends Application {
                 "Cube"
         );
         authenticator.setVerifier((Request request, Response response) -> {
-            Subject subject = SecurityUtils.getSubject();
-            if (!subject.isAuthenticated()) {
-                ChallengeResponse challengeResponse = request.getChallengeResponse();
-                if (challengeResponse == null) {
-                    throw new AuthenticationException(
-                            "Credentials are required, but none were provided.");
-                }
-                UsernamePasswordToken token = new UsernamePasswordToken(
-                        challengeResponse.getIdentifier(),
-                        challengeResponse.getSecret()
-                );
-                subject.login(token);
+            if (request.getMethod().equals(Method.OPTIONS)) {
+                return Verifier.RESULT_VALID;
             }
+
+            Subject subject = SecurityUtils.getSubject();
+
+            // We don't want any sessionization for our stateless RESTful API.
+            if (subject.isAuthenticated() && subject.getSession(false) != null) {
+                subject.logout();
+            }
+
+            ChallengeResponse challengeResponse = request.getChallengeResponse();
+            if (challengeResponse == null) {
+                throw new AuthenticationException(
+                        "Credentials are required, but none were provided.");
+            }
+
+            UsernamePasswordToken token = new UsernamePasswordToken(
+                    challengeResponse.getIdentifier(),
+                    challengeResponse.getSecret()
+            );
+            subject.login(token);
+
             return Verifier.RESULT_VALID;
         });
         authenticator.setNext(router);

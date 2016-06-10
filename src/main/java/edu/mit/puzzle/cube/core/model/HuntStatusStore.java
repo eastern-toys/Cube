@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -20,6 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.time.Clock;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -302,4 +304,22 @@ public class HuntStatusStore {
         );
     }
 
+    // TODO: introduce some filtering and/or pagination on this API - always reading all
+    // visibility changes may not scale.
+    public List<VisibilityChange> getVisibilityChanges() {
+        Table<Integer,String,Object> resultTable = DatabaseHelper.query(
+                connectionFactory,
+                "SELECT teamId, puzzleId, status, timestamp FROM visibility_history",
+                ImmutableList.<Object>of());
+        ImmutableList.Builder<VisibilityChange> visibilityChanges = ImmutableList.builder();
+        for (Map<String,Object> rowMap : resultTable.rowMap().values()) {
+            visibilityChanges.add(VisibilityChange.builder()
+                    .setTeamId((String) rowMap.get("teamId"))
+                    .setPuzzleId((String) rowMap.get("puzzleId"))
+                    .setStatus((String) rowMap.get("status"))
+                    .setTimestamp((Instant) rowMap.get("timestamp"))
+                    .build());
+        }
+        return visibilityChanges.build();
+    }
 }

@@ -1,4 +1,3 @@
-
 package edu.mit.puzzle.cube.core.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
