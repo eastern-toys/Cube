@@ -1,12 +1,27 @@
 package edu.mit.puzzle.cube.core.db;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+
 import edu.mit.puzzle.cube.core.model.SubmissionStatus;
+import edu.mit.puzzle.cube.core.model.User;
+import edu.mit.puzzle.cube.core.model.UserStore;
 import edu.mit.puzzle.cube.core.model.VisibilityStatusSet;
 
-import java.sql.*;
+import org.apache.shiro.crypto.hash.DefaultHashService;
+import org.apache.shiro.crypto.hash.Hash;
+import org.apache.shiro.crypto.hash.HashRequest;
+import org.apache.shiro.util.ByteSource;
+import org.sqlite.SQLiteDataSource;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import javax.sql.DataSource;
 
 /**
  * An implementation of ConnectionFactory that wraps an SQLite in-memory database.
@@ -51,10 +66,19 @@ public class InMemoryConnectionFactory implements ConnectionFactory {
             //and are collected when that Connection is closed.
             Connection connection = DriverManager.getConnection("jdbc:sqlite:file::memory:?cache=shared");
 
+            connection.createStatement().executeUpdate("PRAGMA foreign_keys = ON");
+
             return connection;
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public DataSource getDataSource() {
+        SQLiteDataSource dataSource = new SQLiteDataSource();
+        dataSource.setUrl("jdbc:sqlite:file::memory:?cache=shared");
+        return dataSource;
     }
 
     //The initial configuration takes in a list of team ids and puzzle ids to preload the
@@ -65,12 +89,6 @@ public class InMemoryConnectionFactory implements ConnectionFactory {
             List<String> teamIdList,
             List<String> puzzleIdList
     ) {
-        DatabaseHelper.update(
-                this,
-                "PRAGMA foreign_keys = ON",
-                Lists.newArrayList()
-        );
-
         String createRunTableSql = "CREATE TABLE IF NOT EXISTS run " +
                 "(startTimestamp DATETIME DEFAULT NULL)";
         String createTeamsTableSql = "CREATE TABLE IF NOT EXISTS teams " +
@@ -105,11 +123,25 @@ public class InMemoryConnectionFactory implements ConnectionFactory {
                 "PRIMARY KEY(visibilityHistoryId ASC), " +
                 "FOREIGN KEY(teamId) REFERENCES teams(teamId), " +
                 "FOREIGN KEY(puzzleId) REFERENCES puzzles(puzzleId))";
+        String createRolesTableSql = "CREATE TABLE IF NOT EXISTS roles " +
+                "(role_name VARCHAR(40), PRIMARY KEY(role_name))";
+        String createRolesPermissionsTableSql = "CREATE TABLE IF NOT EXISTS roles_permissions " +
+                "(role_name VARCHAR(40), permission VARCHAR(40), " +
+                "PRIMARY KEY(role_name, permission), " +
+                "FOREIGN KEY(role_name) REFERENCES roles(role_name))";
+        String createUsersTableSql = "CREATE TABLE IF NOT EXISTS users " +
+                "(username VARCHAR(40), password VARCHAR(40), password_salt VARCHAR(40), " +
+                "PRIMARY KEY(username))";
+        String createUserRolesTableSql = "CREATE TABLE IF NOT EXISTS user_roles " +
+                "(username VARCHAR(40), role_name VARCHAR(40), " +
+                "FOREIGN KEY(username) REFERENCES users(username), " +
+                "FOREIGN KEY(role_name) REFERENCES roles(role_name))";
 
         List<String> createTableSqls = Lists.newArrayList(
                 createRunTableSql,
                 createTeamsTableSql, createTeamPropertiesTableSql, createPuzzlesTableSql,
-                createSubmissionsTableSql, createVisibilitiesTableSql, createVisibilityHistoriesTableSql);
+                createSubmissionsTableSql, createVisibilitiesTableSql, createVisibilityHistoriesTableSql,
+                createRolesTableSql, createRolesPermissionsTableSql, createUsersTableSql, createUserRolesTableSql);
         for (String createTableSql : createTableSqls) {
             DatabaseHelper.update(
                     this,
@@ -132,6 +164,31 @@ public class InMemoryConnectionFactory implements ConnectionFactory {
                 .map(id -> Lists.<Object>newArrayList(id))
                 .collect(Collectors.toList());
         DatabaseHelper.insertBatch(this, insertPuzzleSql, parameterLists);
+
+        String insertRolesSql =
+                "INSERT INTO roles (role_name) VALUES (?)";
+        DatabaseHelper.insertBatch(this, insertRolesSql, ImmutableList.of(
+                ImmutableList.of("admin"),
+                ImmutableList.of("writingteam")
+        ));
+
+        String insertRolesPermissionsSql =
+                "INSERT INTO roles_permissions (role_name, permission) VALUES (?,?)";
+        DatabaseHelper.insertBatch(this, insertRolesPermissionsSql, ImmutableList.of(
+                ImmutableList.of("admin", "*"),
+                ImmutableList.of("writingteam", "submissions:*"),
+                ImmutableList.of("writingteam", "visibilities:*")
+        ));
+
+        UserStore userStore = new UserStore(this);
+        userStore.addUser(
+                User.builder().setUsername("adminuser").build(),
+                "adminpassword",
+                ImmutableList.of("admin"));
+        userStore.addUser(
+                User.builder().setUsername("writingteamuser").build(),
+                "writingteampassword",
+                ImmutableList.of("writingteam"));
     }
 
 }

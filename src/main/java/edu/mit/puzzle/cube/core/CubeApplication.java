@@ -1,6 +1,5 @@
 package edu.mit.puzzle.cube.core;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.AbstractScheduledService;
 import com.google.common.util.concurrent.Service;
@@ -24,11 +23,10 @@ import edu.mit.puzzle.cube.huntimpl.linearexample.LinearExampleHuntDefinition;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authc.UsernamePasswordToken;
-import org.apache.shiro.authz.Permission;
-import org.apache.shiro.authz.permission.WildcardPermission;
+import org.apache.shiro.authc.credential.HashedCredentialsMatcher;
 import org.apache.shiro.mgt.DefaultSecurityManager;
 import org.apache.shiro.mgt.SecurityManager;
-import org.apache.shiro.realm.SimpleAccountRealm;
+import org.apache.shiro.realm.jdbc.JdbcRealm;
 import org.apache.shiro.subject.Subject;
 import org.restlet.Application;
 import org.restlet.Component;
@@ -57,17 +55,17 @@ public class CubeApplication extends Application {
     public CubeApplication() throws SQLException {
         setStatusService(new CubeStatusService());
 
-        setupAuthentication();
-
         HuntDefinition huntDefinition = new LinearExampleHuntDefinition();
         ServiceEnvironment serviceEnvironment = new DevelopmentEnvironment(huntDefinition);
+
+        ConnectionFactory connectionFactory = serviceEnvironment.getConnectionFactory();
+
+        setupAuthentication(connectionFactory);
 
         CorsService corsService = new CorsService();
         corsService.setAllowedOrigins(ImmutableSet.of("*"));
         corsService.setAllowedCredentials(true);
         getServices().add(corsService);
-
-        ConnectionFactory connectionFactory = serviceEnvironment.getConnectionFactory();
 
         eventProcessor = new CompositeEventProcessor();
         submissionStore = new SubmissionStore(
@@ -99,20 +97,12 @@ public class CubeApplication extends Application {
         timingEventService.startAsync();
     }
 
-    private void setupAuthentication() {
-        // TODO: replace this with a JdbcRealm backed by our database
-        SimpleAccountRealm realm = new SimpleAccountRealm();
-        realm.addRole("admin");
-        realm.addRole("writingteam");
-        realm.addAccount("adminuser", "adminpassword", "admin");
-        realm.addAccount("writingteamuser", "writingteampassword", "writingteam");
-        realm.setRolePermissionResolver((String role) -> {
-            switch (role) {
-            case "admin":
-                return ImmutableList.of(new WildcardPermission("*"));
-            }
-            return ImmutableList.<Permission>of();
-        });
+    private void setupAuthentication(ConnectionFactory connectionFactory) {
+        JdbcRealm realm = new JdbcRealm();
+        realm.setCredentialsMatcher(new HashedCredentialsMatcher("SHA-512"));
+        realm.setDataSource(connectionFactory.getDataSource());
+        realm.setPermissionsLookupEnabled(true);
+        realm.setSaltStyle(JdbcRealm.SaltStyle.COLUMN);
 
         SecurityManager securityManager = new DefaultSecurityManager(realm);
         SecurityUtils.setSecurityManager(securityManager);
