@@ -3,6 +3,7 @@ package edu.mit.puzzle.cube.core.serverresources;
 import edu.mit.puzzle.cube.core.model.PostResult;
 import edu.mit.puzzle.cube.core.model.Visibility;
 
+import org.apache.shiro.SecurityUtils;
 import org.restlet.resource.Get;
 import org.restlet.resource.Post;
 
@@ -28,6 +29,7 @@ public class VisibilityResource extends AbstractCubeResource {
     public Visibility handleGet() {
         String teamId = getTeamId();
         String puzzleId = getPuzzleId();
+        SecurityUtils.getSubject().checkPermission("visibilities:read:" + teamId);
         return Visibility.builder()
                 .setTeamId(teamId)
                 .setPuzzleId(puzzleId)
@@ -39,6 +41,8 @@ public class VisibilityResource extends AbstractCubeResource {
     public PostResult handlePost(Visibility visibility) {
         String teamId = getTeamId();
         String puzzleId = getPuzzleId();
+
+        SecurityUtils.getSubject().checkPermission("visibilities:update:" + teamId);
 
         if (visibility.getStatus() == null
                 || !huntStatusStore.getVisibilityStatusSet().isAllowedStatus(visibility.getStatus())) {

@@ -14,7 +14,7 @@ public class AuthenticationTest extends RestletTest {
     public void testNoCredentials() {
         currentUserCredentials = null;
         exception.expect(AuthenticationException.class);
-        get("/user/testerteam");
+        get("/user/adminuser");
     }
 
     @Test
@@ -25,17 +25,17 @@ public class AuthenticationTest extends RestletTest {
                 "password"
         );
         exception.expect(AuthenticationException.class);
-        get("/user/testerteam");
+        get("/user/adminuser");
     }
 
     @Test
     public void testWrongPassword() {
         currentUserCredentials = new ChallengeResponse(
                 ChallengeScheme.HTTP_BASIC,
-                TESTERTEAM_CREDENTIALS.getIdentifier(),
+                ADMIN_CREDENTIALS.getIdentifier(),
                 "wrongpassword"
         );
         exception.expect(AuthenticationException.class);
-        get("/user/testerteam");
+        get("/user/adminuser");
     }
 }

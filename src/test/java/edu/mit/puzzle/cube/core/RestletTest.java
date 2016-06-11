@@ -15,12 +15,17 @@ import edu.mit.puzzle.cube.core.serverresources.AbstractCubeResource;
 import edu.mit.puzzle.cube.modules.model.StandardVisibilityStatusSet;
 
 import org.apache.shiro.SecurityUtils;
+import org.apache.shiro.UnavailableSecurityManagerException;
 import org.apache.shiro.authz.Permission;
 import org.apache.shiro.authz.permission.WildcardPermission;
 import org.apache.shiro.mgt.DefaultSecurityManager;
 import org.apache.shiro.mgt.SecurityManager;
 import org.apache.shiro.realm.Realm;
 import org.apache.shiro.realm.SimpleAccountRealm;
+import org.apache.shiro.subject.support.SubjectThreadState;
+import org.apache.shiro.util.LifecycleUtils;
+import org.apache.shiro.util.ThreadState;
+import org.junit.After;
 import org.junit.Before;
 import org.restlet.Context;
 import org.restlet.Request;
@@ -49,26 +54,24 @@ public abstract class RestletTest {
 
     protected static final ChallengeResponse ADMIN_CREDENTIALS =
             new ChallengeResponse(ChallengeScheme.HTTP_BASIC, "adminuser", "adminpassword");
-    protected static final ChallengeResponse TESTERTEAM_CREDENTIALS =
-            new ChallengeResponse(ChallengeScheme.HTTP_BASIC, "testerteam", "testerteampassword");
 
-    protected final Context context;
-    protected final Restlet restlet;
+    private static ThreadState subjectThreadState;
+
+    protected Context context;
+    protected Restlet restlet;
 
     protected InMemoryConnectionFactory connectionFactory;
     protected ChallengeResponse currentUserCredentials;
 
-    public RestletTest() {
-        context = new Context();
-        restlet = new CubeRestlet(context);
-    }
-
     @Before
     public void setUp() throws SQLException {
+        context = new Context();
+        restlet = new CubeRestlet(context);
+
         HuntDefinition huntDefinition = createHuntDefinition();
         connectionFactory = new InMemoryConnectionFactory(
                 huntDefinition.getVisibilityStatusSet(),
-                ImmutableList.of(TESTERTEAM_CREDENTIALS.getIdentifier()),
+                ImmutableList.of("testerteam"),
                 huntDefinition.getPuzzleList());
 
         CompositeEventProcessor eventProcessor = new CompositeEventProcessor();
@@ -96,7 +99,24 @@ public abstract class RestletTest {
         SecurityManager securityManager = new DefaultSecurityManager(realm);
         SecurityUtils.setSecurityManager(securityManager);
 
+        subjectThreadState = new SubjectThreadState(SecurityUtils.getSubject());
+        subjectThreadState.bind();
+
         currentUserCredentials = ADMIN_CREDENTIALS;
+    }
+
+    @After
+    public void tearDown() {
+        if (subjectThreadState != null) {
+            subjectThreadState.clear();
+            subjectThreadState = null;
+        }
+        try {
+            SecurityManager securityManager = SecurityUtils.getSecurityManager();
+            LifecycleUtils.destroy(securityManager);
+        } catch (UnavailableSecurityManagerException e) {
+        }
+        SecurityUtils.setSecurityManager(null);
     }
 
     protected HuntDefinition createHuntDefinition() {
@@ -130,22 +150,10 @@ public abstract class RestletTest {
                 "admin"
         );
 
-        realm.addRole("team");
-        realm.addAccount(
-                TESTERTEAM_CREDENTIALS.getIdentifier(),
-                new String(TESTERTEAM_CREDENTIALS.getSecret()),
-                "team"
-        );
-
         realm.setRolePermissionResolver((String role) -> {
             switch (role) {
             case "admin":
                 return ImmutableList.of(new WildcardPermission("*"));
-            case "team":
-                return ImmutableList.of(
-                        new WildcardPermission("submissions:read,create:testerteam"),
-                        new WildcardPermission("visibilities:read:testerteam")
-                );
             }
             return ImmutableList.<Permission>of();
         });

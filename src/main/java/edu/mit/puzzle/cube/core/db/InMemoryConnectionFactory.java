@@ -193,8 +193,12 @@ public class InMemoryConnectionFactory implements ConnectionFactory {
                 "INSERT INTO roles_permissions (role_name, permission) VALUES (?,?)";
         DatabaseHelper.insertBatch(this, insertRolesPermissionsSql, ImmutableList.of(
                 ImmutableList.of("admin", "*"),
-                ImmutableList.of("writingteam", "submissions:*"),
-                ImmutableList.of("writingteam", "visibilities:*")
+                ImmutableList.of("writingteam", "users:read"),
+                ImmutableList.of("writingteam", "userinfo:read:*"),
+                ImmutableList.of("writingteam", "teams:read"),
+                ImmutableList.of("writingteam", "teaminfo:read:*"),
+                ImmutableList.of("writingteam", "submissions:read,update:*"),
+                ImmutableList.of("writingteam", "visibilities:read:*")
         ));
 
         UserStore userStore = new UserStore(this);

@@ -14,6 +14,10 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class AuthorizationTest extends RestletTest {
+    protected static final ChallengeResponse TESTERTEAM_CREDENTIALS =
+            new ChallengeResponse(ChallengeScheme.HTTP_BASIC, "testerteam", "testerteampassword");
+
+    @Override
     protected Realm createAuthenticationRealm() {
         CubeJdbcRealm realm = new CubeJdbcRealm();
         realm.setDataSource(connectionFactory.getDataSource());

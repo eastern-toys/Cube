@@ -2,6 +2,7 @@ package edu.mit.puzzle.cube.core.serverresources;
 
 import edu.mit.puzzle.cube.core.model.Team;
 
+import org.apache.shiro.SecurityUtils;
 import org.restlet.resource.Get;
 
 public class TeamResource extends AbstractCubeResource {
@@ -17,6 +18,7 @@ public class TeamResource extends AbstractCubeResource {
     @Get
     public Team handleGet() {
         String id = getId();
+        SecurityUtils.getSubject().checkPermission("teaminfo:read:" + id);
         return huntStatusStore.getTeam(id);
     }
 }
