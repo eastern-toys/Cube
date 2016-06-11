@@ -66,7 +66,8 @@ public class InMemoryConnectionFactory implements ConnectionFactory {
     public InMemoryConnectionFactory(
             VisibilityStatusSet visibilityStatusSet,
             List<String> teamIdList,
-            List<String> puzzleIdList
+            List<String> puzzleIdList,
+            List<User> userList
     ) throws SQLException {
         dataSource = new InMemorySQLiteDataSource();
 
@@ -75,7 +76,7 @@ public class InMemoryConnectionFactory implements ConnectionFactory {
         clear();
 
         //Boot up the initial state of tables
-        createInitialConfiguration(visibilityStatusSet, teamIdList, puzzleIdList);
+        createInitialConfiguration(visibilityStatusSet, teamIdList, puzzleIdList, userList);
     }
 
     @Override
@@ -88,13 +89,14 @@ public class InMemoryConnectionFactory implements ConnectionFactory {
         return dataSource;
     }
 
-    //The initial configuration takes in a list of team ids and puzzle ids to preload the
+    //The initial configuration takes in lists of team ids, puzzle ids and users to preload the
     //database. For a production off-box database, this wouldn't be necessary because you'd
     //just load the data there, but for an in-memory database, we need to set it up in code.
     private void createInitialConfiguration(
             VisibilityStatusSet visibilityStatusSet,
             List<String> teamIdList,
-            List<String> puzzleIdList
+            List<String> puzzleIdList,
+            List<User> userList
     ) {
         String createRunTableSql = "CREATE TABLE IF NOT EXISTS run " +
                 "(startTimestamp DATETIME DEFAULT NULL)";
@@ -197,16 +199,9 @@ public class InMemoryConnectionFactory implements ConnectionFactory {
         ));
 
         UserStore userStore = new UserStore(this);
-        userStore.addUser(User.builder()
-                .setUsername("adminuser")
-                .setPassword("adminpassword")
-                .setRoles(ImmutableList.of("admin"))
-                .build());
-        userStore.addUser(User.builder()
-                .setUsername("writingteamuser")
-                .setPassword("writingteampassword")
-                .setRoles(ImmutableList.of("writingteam"))
-                .build());
+        for (User user : userList) {
+            userStore.addUser(user);
+        }
     }
 
     // Clear the state of the shared database. Useful to run between unit tests.

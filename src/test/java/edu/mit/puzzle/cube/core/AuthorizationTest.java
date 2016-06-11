@@ -14,13 +14,13 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class AuthorizationTest extends RestletTest {
-    protected static final ChallengeResponse TESTERTEAM_CREDENTIALS =
-            new ChallengeResponse(ChallengeScheme.HTTP_BASIC, "testerteam", "testerteampassword");
+    protected static final ChallengeResponse NEWTEAM_CREDENTIALS =
+            new ChallengeResponse(ChallengeScheme.HTTP_BASIC, "newteam", "newteampassword");
 
     @Override
     protected Realm createAuthenticationRealm() {
         CubeJdbcRealm realm = new CubeJdbcRealm();
-        realm.setDataSource(connectionFactory.getDataSource());
+        realm.setDataSource(serviceEnvironment.getConnectionFactory().getDataSource());
         return realm;
     }
 
@@ -28,20 +28,20 @@ public class AuthorizationTest extends RestletTest {
     public void createAndAuthorizeUser_noRoles() {
         JsonNode json = post("/users", String.format(
                 "{\"username\":\"%s\",\"password\":\"%s\"}",
-                TESTERTEAM_CREDENTIALS.getIdentifier(),
-                new String(TESTERTEAM_CREDENTIALS.getSecret())
+                NEWTEAM_CREDENTIALS.getIdentifier(),
+                new String(NEWTEAM_CREDENTIALS.getSecret())
         ));
         assertTrue(json.has("created"));
         assertTrue(json.get("created").asBoolean());
 
-        json = get(String.format("/users/%s", TESTERTEAM_CREDENTIALS.getIdentifier()));
-        assertEquals(TESTERTEAM_CREDENTIALS.getIdentifier(), json.get("username").asText());
+        json = get(String.format("/users/%s", NEWTEAM_CREDENTIALS.getIdentifier()));
+        assertEquals(NEWTEAM_CREDENTIALS.getIdentifier(), json.get("username").asText());
 
-        currentUserCredentials = TESTERTEAM_CREDENTIALS;
+        currentUserCredentials = NEWTEAM_CREDENTIALS;
 
         json = get(String.format(
                 "/authorized?permission=userinfo:read:%s",
-                TESTERTEAM_CREDENTIALS.getIdentifier()
+                NEWTEAM_CREDENTIALS.getIdentifier()
         ));
         assertTrue(json.has("authorized"));
         assertTrue(json.get("authorized").asBoolean());

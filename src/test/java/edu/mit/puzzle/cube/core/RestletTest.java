@@ -5,7 +5,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 
-import edu.mit.puzzle.cube.core.db.InMemoryConnectionFactory;
+import edu.mit.puzzle.cube.core.db.ConnectionFactory;
+import edu.mit.puzzle.cube.core.environments.DevelopmentEnvironment;
+import edu.mit.puzzle.cube.core.environments.ServiceEnvironment;
 import edu.mit.puzzle.cube.core.events.CompositeEventProcessor;
 import edu.mit.puzzle.cube.core.model.HuntStatusStore;
 import edu.mit.puzzle.cube.core.model.SubmissionStore;
@@ -59,8 +61,8 @@ public abstract class RestletTest {
 
     protected Context context;
     protected Restlet restlet;
+    protected ServiceEnvironment serviceEnvironment;
 
-    protected InMemoryConnectionFactory connectionFactory;
     protected ChallengeResponse currentUserCredentials;
 
     @Before
@@ -69,10 +71,8 @@ public abstract class RestletTest {
         restlet = new CubeRestlet(context);
 
         HuntDefinition huntDefinition = createHuntDefinition();
-        connectionFactory = new InMemoryConnectionFactory(
-                huntDefinition.getVisibilityStatusSet(),
-                ImmutableList.of("testerteam"),
-                huntDefinition.getPuzzleList());
+        serviceEnvironment = new DevelopmentEnvironment(huntDefinition);
+        ConnectionFactory connectionFactory = serviceEnvironment.getConnectionFactory();
 
         CompositeEventProcessor eventProcessor = new CompositeEventProcessor();
         HuntStatusStore huntStatusStore = new HuntStatusStore(

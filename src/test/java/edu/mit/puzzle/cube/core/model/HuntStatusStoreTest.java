@@ -3,6 +3,7 @@ package edu.mit.puzzle.cube.core.model;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.auto.value.AutoValue;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Table;
 
@@ -51,7 +52,8 @@ public class HuntStatusStoreTest {
         connectionFactory = new InMemoryConnectionFactory(
                 visibilityStatusSet,
                 Lists.newArrayList(TEST_TEAM_ID),
-                Lists.newArrayList(TEST_PUZZLE_ID,TEST_PUZZLE_ID_2,TEST_PUZZLE_ID_3));
+                Lists.newArrayList(TEST_PUZZLE_ID,TEST_PUZZLE_ID_2,TEST_PUZZLE_ID_3),
+                ImmutableList.<User>of());
         clock = new AdjustableClock(Clock.fixed(Instant.now(), ZoneId.of("UTC")));
         eventProcessor = mock(EventProcessor.class);
         huntStatusStore = new HuntStatusStore(connectionFactory, clock, visibilityStatusSet, eventProcessor);

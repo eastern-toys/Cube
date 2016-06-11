@@ -1,9 +1,11 @@
 package edu.mit.puzzle.cube.core.db;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Table;
 
 import edu.mit.puzzle.cube.core.model.SubmissionStatus;
+import edu.mit.puzzle.cube.core.model.User;
 import edu.mit.puzzle.cube.modules.model.StandardVisibilityStatusSet;
 
 import org.junit.Before;
@@ -26,7 +28,8 @@ public class DatabaseHelperTest {
         connectionFactory = new InMemoryConnectionFactory(
                 new StandardVisibilityStatusSet(),
                 Lists.newArrayList(TEST_TEAM_ID),
-                Lists.newArrayList(TEST_PUZZLE_ID));
+                Lists.newArrayList(TEST_PUZZLE_ID),
+                ImmutableList.<User>of());
     }
 
     @Test

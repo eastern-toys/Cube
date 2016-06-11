@@ -4,17 +4,32 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import edu.mit.puzzle.cube.core.HuntDefinition;
 import edu.mit.puzzle.cube.core.RestletTest;
+import edu.mit.puzzle.cube.core.db.CubeJdbcRealm;
 import edu.mit.puzzle.cube.huntimpl.linearexample.LinearExampleHuntDefinition;
 
+import org.apache.shiro.realm.Realm;
 import org.junit.Test;
+import org.restlet.data.ChallengeResponse;
+import org.restlet.data.ChallengeScheme;
 
 import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
 
 public class LinearHuntRunTest extends RestletTest {
+    protected static final ChallengeResponse TESTERTEAM_CREDENTIALS =
+            new ChallengeResponse(ChallengeScheme.HTTP_BASIC, "testerteam", "testerteampassword");
+
+    @Override
     protected HuntDefinition createHuntDefinition() {
         return new LinearExampleHuntDefinition();
+    }
+
+    @Override
+    protected Realm createAuthenticationRealm() {
+        CubeJdbcRealm realm = new CubeJdbcRealm();
+        realm.setDataSource(serviceEnvironment.getConnectionFactory().getDataSource());
+        return realm;
     }
 
     @Test
@@ -34,7 +49,11 @@ public class LinearHuntRunTest extends RestletTest {
         json = getVisibility("testerteam","puzzle2");
         assertEquals("INVISIBLE", json.get("status").asText());
 
+        currentUserCredentials = TESTERTEAM_CREDENTIALS;
+
         postNewSubmission("testerteam", "puzzle1", "guess");
+
+        currentUserCredentials = ADMIN_CREDENTIALS;
 
         json = getSubmission(1);
         assertEquals("SUBMITTED", json.get("status").asText());

@@ -1,5 +1,6 @@
 package edu.mit.puzzle.cube.core.model;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
 import edu.mit.puzzle.cube.core.AdjustableClock;
@@ -41,7 +42,8 @@ public class SubmissionStoreTest {
         connectionFactory = new InMemoryConnectionFactory(
                 new StandardVisibilityStatusSet(),
                 Lists.newArrayList(TEST_TEAM_ID),
-                Lists.newArrayList(TEST_PUZZLE_ID));
+                Lists.newArrayList(TEST_PUZZLE_ID),
+                ImmutableList.<User>of());
         clock = new AdjustableClock(Clock.fixed(Instant.now(), ZoneId.of("UTC")));
         eventProcessor = mock(EventProcessor.class);
 
