@@ -4,6 +4,7 @@ import edu.mit.puzzle.cube.core.model.PostResult;
 import edu.mit.puzzle.cube.core.model.Submission;
 
 import org.apache.shiro.SecurityUtils;
+import org.apache.shiro.subject.Subject;
 import org.restlet.data.Status;
 import org.restlet.resource.Get;
 import org.restlet.resource.Post;
@@ -54,10 +55,17 @@ public class SubmissionResource extends AbstractCubeResource {
                     Status.CLIENT_ERROR_NOT_FOUND,
                     String.format("Submission %d does not exist", id));
         }
-        SecurityUtils.getSubject().checkPermission(
-                "submissions:update:" + existingSubmission.get().getTeamId());
 
-        boolean changed = submissionStore.setSubmissionStatus(id, submission.getStatus());
+        Subject subject = SecurityUtils.getSubject();
+        subject.checkPermission("submissions:update:" + existingSubmission.get().getTeamId());
+
+        String callerUsername = null;
+        if (submission.getStatus().isAssigned()) {
+            callerUsername = (String) subject.getPrincipal();
+        }
+
+        boolean changed = submissionStore.setSubmissionStatus(
+                id, submission.getStatus(), callerUsername);
         return PostResult.builder().setUpdated(changed).build();
     }
 }

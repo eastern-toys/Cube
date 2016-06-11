@@ -11,10 +11,17 @@ public enum SubmissionStatus {
     INCORRECT,
     CORRECT;
 
+    private static Set<SubmissionStatus> ASSIGNED_STATUSES =
+            ImmutableSet.of(ASSIGNED, INCORRECT, CORRECT);
     private static Set<SubmissionStatus> TERMINAL_STATUSES = ImmutableSet.of(INCORRECT, CORRECT);
+
 
     public static SubmissionStatus getDefault() {
         return SUBMITTED;
+    }
+
+    public boolean isAssigned() {
+        return ASSIGNED_STATUSES.contains(this);
     }
 
     public boolean isTerminal() {

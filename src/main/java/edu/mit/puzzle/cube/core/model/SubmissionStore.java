@@ -21,6 +21,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import javax.annotation.Nullable;
+
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class SubmissionStore {
@@ -69,6 +71,7 @@ public class SubmissionStore {
                 .setPuzzleId((String) rowMap.get("puzzleId"))
                 .setSubmission((String) rowMap.get("submission"))
                 .setStatus(SubmissionStatus.valueOf((String) rowMap.get("status")))
+                .setCallerUsername((String) rowMap.get("callerUsername"))
                 .setTimestamp((Instant) rowMap.get("timestamp"))
                 .build();
     }
@@ -105,11 +108,13 @@ public class SubmissionStore {
         return Optional.of(generateSubmissionObject(resultTable.row(submissionId)));
     }
 
-    public boolean setSubmissionStatus(int submissionId, SubmissionStatus status) {
+    public boolean setSubmissionStatus(
+            int submissionId, SubmissionStatus status, @Nullable String callerUsername) {
         boolean updated = DatabaseHelper.update(
                 connectionFactory,
-                "UPDATE submissions SET status = ? WHERE submissionId = ? AND status <> ?",
-                Lists.newArrayList(status, submissionId, status)
+                "UPDATE submissions SET status = ?, callerUsername = ? " +
+                "WHERE submissionId = ? AND (status <> ? OR callerUsername <> ?)",
+                Lists.newArrayList(status, callerUsername, submissionId, status, callerUsername)
         ) > 0;
 
         if (updated && status.isTerminal()) {

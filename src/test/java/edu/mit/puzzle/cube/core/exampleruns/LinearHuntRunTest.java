@@ -62,6 +62,10 @@ public class LinearHuntRunTest extends RestletTest {
 
         postUpdateSubmission(1, "CORRECT");
 
+        json = getSubmission(1);
+        assertEquals("CORRECT", json.get("status").asText());
+        assertEquals("adminuser", json.get("callerUsername").asText());
+
         json = getVisibility("testerteam", "puzzle1");
         assertEquals("SOLVED", json.get("status").asText());
         json = getVisibility("testerteam", "puzzle2");

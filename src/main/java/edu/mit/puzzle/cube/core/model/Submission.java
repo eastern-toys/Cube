@@ -19,6 +19,7 @@ public abstract class Submission {
         @Nullable @JsonProperty("puzzleId") public abstract Builder setPuzzleId(String puzzleId);
         @Nullable @JsonProperty("submission") public abstract Builder setSubmission(String submission);
         @Nullable @JsonProperty("status") public abstract Builder setStatus(SubmissionStatus status);
+        @Nullable @JsonProperty("callerUsername") public abstract Builder setCallerUsername(String callerUsername);
 
         @Nullable
         @JsonProperty("timestamp")
@@ -37,6 +38,7 @@ public abstract class Submission {
     @Nullable @JsonProperty("puzzleId") public abstract String getPuzzleId();
     @Nullable @JsonProperty("submission") public abstract String getSubmission();
     @Nullable @JsonProperty("status") public abstract SubmissionStatus getStatus();
+    @Nullable @JsonProperty("callerUsername") public abstract String getCallerUsername();
 
     @Nullable
     @JsonProperty("timestamp")

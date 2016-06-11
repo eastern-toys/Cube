@@ -116,9 +116,11 @@ public class InMemoryConnectionFactory implements ConnectionFactory {
                 "(submissionId INTEGER, puzzleId VARCHAR(40), teamId VARCHAR(20), submission TEXT, " +
                 "timestamp DATETIME DEFAULT CURRENT_TIMESTAMP, " +
                 "status VARCHAR(10) DEFAULT '" + SubmissionStatus.getDefault() + "', " +
+                "callerUsername VARCHAR(40), " +
                 "PRIMARY KEY(submissionId ASC), " +
                 "FOREIGN KEY(teamId) REFERENCES teams(teamId), " +
-                "FOREIGN KEY(puzzleId) REFERENCES puzzles(puzzleId))";
+                "FOREIGN KEY(puzzleId) REFERENCES puzzles(puzzleId), " +
+                "FOREIGN KEY(callerUsername) REFERENCES users(username))";
         String createVisibilitiesTableSql = "CREATE TABLE IF NOT EXISTS visibilities " +
                 "(teamId VARCHAR(20), puzzleId VARCHAR(40), " +
                 "status VARCHAR(10) DEFAULT '" + visibilityStatusSet.getDefaultVisibilityStatus() + "', " +
