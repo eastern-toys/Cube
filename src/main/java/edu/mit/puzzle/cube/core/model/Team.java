@@ -1,6 +1,8 @@
 package edu.mit.puzzle.cube.core.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.google.auto.value.AutoValue;
 import com.google.common.base.Preconditions;
 
@@ -10,6 +12,7 @@ import java.util.Map;
 import javax.annotation.Nullable;
 
 @AutoValue
+@JsonDeserialize(builder = AutoValue_Team.Builder.class)
 public abstract class Team {
     public static abstract class Property {
         private static Map<String, Class<? extends Property>> propertyClasses = new HashMap<>();
@@ -26,22 +29,30 @@ public abstract class Team {
     @AutoValue.Builder
     public static abstract class Builder {
         @JsonProperty("teamId") public abstract Builder setTeamId(String teamId);
-        @Nullable @JsonProperty("teamProperties") public abstract Builder setTeamProperties(Map<String, Property> teamProperties);
+
+        @Nullable
+        @JsonProperty("password") public abstract Builder setPassword(@Nullable String password);
+
+        @Nullable
+        @JsonProperty("teamProperties")
+        public abstract Builder setTeamProperties(@Nullable Map<String, Property> teamProperties);
 
         abstract Team autoBuild();
 
         public Team build() {
             Team team = autoBuild();
-            for (Map.Entry<String, Property> entry : team.getTeamProperties().entrySet()) {
-                Class<? extends Property> propertyClass = Property.getClass(entry.getKey());
-                Preconditions.checkNotNull(
-                        propertyClass,
-                        "Team property class %s is not registered",
-                        entry.getKey());
-                Preconditions.checkState(
-                        propertyClass.isInstance(entry.getValue()),
-                        "Team property object %s has wrong type",
-                        entry.getKey());
+            if (team.getTeamProperties() != null) {
+                for (Map.Entry<String, Property> entry : team.getTeamProperties().entrySet()) {
+                    Class<? extends Property> propertyClass = Property.getClass(entry.getKey());
+                    Preconditions.checkNotNull(
+                            propertyClass,
+                            "Team property class %s is not registered",
+                            entry.getKey());
+                    Preconditions.checkState(
+                            propertyClass.isInstance(entry.getValue()),
+                            "Team property object %s has wrong type",
+                            entry.getKey());
+                }
             }
             return team;
         }
@@ -53,6 +64,9 @@ public abstract class Team {
 
     @SuppressWarnings("unchecked")
     public <T extends Property> T getTeamProperty(Class<T> propertyClass) {
+        if (getTeamProperties() == null) {
+            return null;
+        }
         Property property = getTeamProperties().get(propertyClass.getSimpleName());
         if (property != null) {
             return (T) property;
@@ -61,5 +75,14 @@ public abstract class Team {
     }
 
     @JsonProperty("teamId") public abstract String getTeamId();
-    @JsonProperty("teamProperties") public abstract Map<String, Property> getTeamProperties();
+
+    @Nullable
+    @JsonProperty("password")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public abstract String getPassword();
+
+    @Nullable
+    @JsonProperty("teamProperties")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public abstract Map<String, Property> getTeamProperties();
 }

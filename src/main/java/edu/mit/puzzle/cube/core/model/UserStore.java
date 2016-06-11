@@ -16,6 +16,7 @@ import org.restlet.resource.ResourceException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
@@ -38,7 +39,7 @@ public class UserStore {
         try (
                 Connection connection = connectionFactory.getConnection();
                 PreparedStatement insertUserStatement = connection.prepareStatement(
-                        "INSERT INTO users (username, password, password_salt) VALUES (?,?,?)");
+                        "INSERT INTO users (username, password, password_salt, teamId) VALUES (?,?,?,?)");
                 PreparedStatement insertUserRoleStatement = connection.prepareStatement(
                         "INSERT INTO user_roles (username, role_name) VALUES (?,?)")
         ) {
@@ -55,6 +56,11 @@ public class UserStore {
             insertUserStatement.setString(1, user.getUsername());
             insertUserStatement.setString(2, passwordHash.toHex());
             insertUserStatement.setString(3, salt);
+            if (user.getTeamId() != null) {
+                insertUserStatement.setString(4, user.getTeamId());
+            } else {
+                insertUserStatement.setNull(4, Types.NULL);
+            }
             insertUserStatement.executeUpdate();
 
             if (user.getRoles() != null) {
@@ -115,6 +121,7 @@ public class UserStore {
         Map<String, Object> row = resultTable.row(0);
         return User.builder()
                 .setUsername((String) row.get("username"))
+                .setTeamId((String) row.get("teamId"))
                 .build();
     }
 }

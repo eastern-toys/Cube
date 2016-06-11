@@ -22,6 +22,9 @@ public abstract class User {
         @Nullable
         @JsonProperty("roles") public abstract Builder setRoles(@Nullable List<String> roles);
 
+        @Nullable
+        @JsonProperty("teamId") public abstract Builder setTeamId(@Nullable String teamId);
+
         public abstract User build();
     }
 
@@ -40,4 +43,8 @@ public abstract class User {
     @JsonProperty("roles")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public abstract List<String> getRoles();
+
+    @Nullable
+    @JsonProperty("teamId")
+    public abstract String getTeamId();
 }

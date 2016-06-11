@@ -16,10 +16,15 @@ import edu.mit.puzzle.cube.core.events.Event;
 import edu.mit.puzzle.cube.core.events.EventProcessor;
 import edu.mit.puzzle.cube.core.events.VisibilityChangeEvent;
 
+import org.restlet.data.Status;
+import org.restlet.resource.ResourceException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
@@ -214,6 +219,22 @@ public class HuntStatusStore {
                 Lists.newArrayList(propertyValue, teamId, propertyKey)
         );
         return updates > 0;
+    }
+
+    public void addTeam(Team team) {
+        try (
+                Connection connection = connectionFactory.getConnection();
+                PreparedStatement insertTeamStatement = connection.prepareStatement(
+                        "INSERT INTO teams (teamId) VALUES (?)")
+        ) {
+            insertTeamStatement.setString(1, team.getTeamId());
+            insertTeamStatement.executeUpdate();
+        } catch (SQLException e) {
+            throw new ResourceException(
+                    Status.CLIENT_ERROR_BAD_REQUEST.getCode(),
+                    e,
+                    "Failed to add team to the database");
+        }
     }
 
     private Optional<String> getExplicitVisibility(String teamId, String puzzleId) {

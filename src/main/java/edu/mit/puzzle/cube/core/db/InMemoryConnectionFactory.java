@@ -140,7 +140,9 @@ public class InMemoryConnectionFactory implements ConnectionFactory {
                 "FOREIGN KEY(role_name) REFERENCES roles(role_name))";
         String createUsersTableSql = "CREATE TABLE IF NOT EXISTS users " +
                 "(username VARCHAR(40), password VARCHAR(40), password_salt VARCHAR(40), " +
-                "PRIMARY KEY(username))";
+                "teamId VARCHAR(20), " +
+                "PRIMARY KEY(username), " +
+                "FOREIGN KEY (teamId) REFERENCES teams(teamId))";
         String createUserRolesTableSql = "CREATE TABLE IF NOT EXISTS user_roles " +
                 "(username VARCHAR(40), role_name VARCHAR(40), " +
                 "FOREIGN KEY(username) REFERENCES users(username), " +

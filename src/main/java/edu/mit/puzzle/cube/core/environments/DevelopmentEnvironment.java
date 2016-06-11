@@ -42,6 +42,7 @@ public class DevelopmentEnvironment implements ServiceEnvironment {
             userList.add(User.builder()
                     .setUsername(teamId)
                     .setPassword(teamId + "password")
+                    .setTeamId(teamId)
                     .build());
         }
 
