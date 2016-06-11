@@ -1,12 +1,14 @@
 package edu.mit.puzzle.cube.core.model;
 
 import com.google.common.collect.Lists;
+
 import edu.mit.puzzle.cube.core.AdjustableClock;
 import edu.mit.puzzle.cube.core.db.ConnectionFactory;
-import edu.mit.puzzle.cube.core.db.InMemorySingleUnsharedConnectionFactory;
+import edu.mit.puzzle.cube.core.db.InMemoryConnectionFactory;
 import edu.mit.puzzle.cube.core.events.Event;
 import edu.mit.puzzle.cube.core.events.EventProcessor;
 import edu.mit.puzzle.cube.modules.model.StandardVisibilityStatusSet;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -19,7 +21,10 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
 
 public class SubmissionStoreTest {
 
@@ -33,7 +38,7 @@ public class SubmissionStoreTest {
 
     @Before
     public void setup() throws SQLException {
-        connectionFactory = new InMemorySingleUnsharedConnectionFactory(
+        connectionFactory = new InMemoryConnectionFactory(
                 new StandardVisibilityStatusSet(),
                 Lists.newArrayList(TEST_TEAM_ID),
                 Lists.newArrayList(TEST_PUZZLE_ID));

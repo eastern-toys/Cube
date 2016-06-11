@@ -5,8 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 
-import edu.mit.puzzle.cube.core.db.ConnectionFactory;
-import edu.mit.puzzle.cube.core.db.InMemorySingleUnsharedConnectionFactory;
+import edu.mit.puzzle.cube.core.db.InMemoryConnectionFactory;
 import edu.mit.puzzle.cube.core.events.CompositeEventProcessor;
 import edu.mit.puzzle.cube.core.model.HuntStatusStore;
 import edu.mit.puzzle.cube.core.model.SubmissionStore;
@@ -56,6 +55,7 @@ public abstract class RestletTest {
     protected final Context context;
     protected final Restlet restlet;
 
+    protected InMemoryConnectionFactory connectionFactory;
     protected ChallengeResponse currentUserCredentials;
 
     public RestletTest() {
@@ -66,7 +66,7 @@ public abstract class RestletTest {
     @Before
     public void setUp() throws SQLException {
         HuntDefinition huntDefinition = createHuntDefinition();
-        ConnectionFactory connectionFactory = new InMemorySingleUnsharedConnectionFactory(
+        connectionFactory = new InMemoryConnectionFactory(
                 huntDefinition.getVisibilityStatusSet(),
                 ImmutableList.of(TESTERTEAM_CREDENTIALS.getIdentifier()),
                 huntDefinition.getPuzzleList());

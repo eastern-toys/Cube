@@ -25,6 +25,10 @@ public interface ConnectionFactory {
      */
     Connection getConnection() throws SQLException;
 
+    /**
+     * Gets a DataSource which may be used to get Connections to the hunt database.
+     * @return A DataSource for the hunt database
+     */
     DataSource getDataSource();
 
 }

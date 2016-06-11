@@ -4,7 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
 import edu.mit.puzzle.cube.core.db.ConnectionFactory;
-import edu.mit.puzzle.cube.core.db.InMemorySingleUnsharedConnectionFactory;
+import edu.mit.puzzle.cube.core.db.InMemoryConnectionFactory;
 import edu.mit.puzzle.cube.modules.model.StandardVisibilityStatusSet;
 
 import org.junit.Before;
@@ -29,7 +29,7 @@ public class UserStoreTest {
 
     @Before
     public void setup() throws SQLException {
-        connectionFactory = new InMemorySingleUnsharedConnectionFactory(
+        connectionFactory = new InMemoryConnectionFactory(
                 new StandardVisibilityStatusSet(),
                 Lists.newArrayList(TEST_TEAM_ID),
                 Lists.newArrayList(TEST_PUZZLE_ID));

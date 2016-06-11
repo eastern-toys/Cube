@@ -8,7 +8,7 @@ import com.google.common.collect.Table;
 
 import edu.mit.puzzle.cube.core.AdjustableClock;
 import edu.mit.puzzle.cube.core.db.ConnectionFactory;
-import edu.mit.puzzle.cube.core.db.InMemorySingleUnsharedConnectionFactory;
+import edu.mit.puzzle.cube.core.db.InMemoryConnectionFactory;
 import edu.mit.puzzle.cube.core.events.Event;
 import edu.mit.puzzle.cube.core.events.EventProcessor;
 import edu.mit.puzzle.cube.modules.model.StandardVisibilityStatusSet;
@@ -48,7 +48,7 @@ public class HuntStatusStoreTest {
     @Before
     public void setup() throws SQLException {
         visibilityStatusSet = new StandardVisibilityStatusSet();
-        connectionFactory = new InMemorySingleUnsharedConnectionFactory(
+        connectionFactory = new InMemoryConnectionFactory(
                 visibilityStatusSet,
                 Lists.newArrayList(TEST_TEAM_ID),
                 Lists.newArrayList(TEST_PUZZLE_ID,TEST_PUZZLE_ID_2,TEST_PUZZLE_ID_3));

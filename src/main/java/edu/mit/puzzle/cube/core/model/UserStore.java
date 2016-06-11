@@ -35,7 +35,13 @@ public class UserStore {
     }
 
     public void addUser(User user, String password, List<String> roles) {
-        try {
+        try (
+                Connection connection = connectionFactory.getConnection();
+                PreparedStatement insertUserStatement = connection.prepareStatement(
+                        "INSERT INTO users (username, password, password_salt) VALUES (?,?,?)");
+                PreparedStatement insertUserRoleStatement = connection.prepareStatement(
+                        "INSERT INTO user_roles (username, role_name) VALUES (?,?)")
+        ) {
             ByteSource saltByteSource = hashService.getRandomNumberGenerator().nextBytes();
             String salt = Base64.getEncoder().encodeToString(saltByteSource.getBytes());
             Hash passwordHash = hashService.computeHash(new HashRequest.Builder()
@@ -44,18 +50,13 @@ public class UserStore {
                     .build()
             );
 
-            Connection connection = connectionFactory.getConnection();
             connection.setAutoCommit(false);
 
-            PreparedStatement insertUserStatement = connection.prepareStatement(
-                    "INSERT INTO users (username, password, password_salt) VALUES (?,?,?)");
             insertUserStatement.setString(1, user.getUsername());
             insertUserStatement.setString(2, passwordHash.toHex());
             insertUserStatement.setString(3, salt);
             insertUserStatement.executeUpdate();
 
-            PreparedStatement insertUserRoleStatement = connection.prepareStatement(
-                    "INSERT INTO user_roles (username, role_name) VALUES (?,?)");
             insertUserRoleStatement.setString(1, user.getUsername());
             for (String role : roles) {
                 insertUserRoleStatement.setString(2, role);

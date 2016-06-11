@@ -2,8 +2,10 @@ package edu.mit.puzzle.cube.core.db;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Table;
+
 import edu.mit.puzzle.cube.core.model.SubmissionStatus;
 import edu.mit.puzzle.cube.modules.model.StandardVisibilityStatusSet;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -21,7 +23,7 @@ public class DatabaseHelperTest {
 
     @Before
     public void setup() throws SQLException {
-        connectionFactory = new InMemorySingleUnsharedConnectionFactory(
+        connectionFactory = new InMemoryConnectionFactory(
                 new StandardVisibilityStatusSet(),
                 Lists.newArrayList(TEST_TEAM_ID),
                 Lists.newArrayList(TEST_PUZZLE_ID));

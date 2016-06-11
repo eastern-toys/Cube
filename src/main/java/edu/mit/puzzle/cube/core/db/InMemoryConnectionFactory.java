@@ -8,16 +8,10 @@ import edu.mit.puzzle.cube.core.model.User;
 import edu.mit.puzzle.cube.core.model.UserStore;
 import edu.mit.puzzle.cube.core.model.VisibilityStatusSet;
 
-import org.apache.shiro.crypto.hash.DefaultHashService;
-import org.apache.shiro.crypto.hash.Hash;
-import org.apache.shiro.crypto.hash.HashRequest;
-import org.apache.shiro.util.ByteSource;
 import org.sqlite.SQLiteDataSource;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -32,52 +26,70 @@ import javax.sql.DataSource;
  */
 public class InMemoryConnectionFactory implements ConnectionFactory {
 
-    //We hold on to a connection in this class so that the JVM garbage collector
-    //doesn't harvest it. In theory, we could also hold onto this connection and
-    //just provide it for every getConnection() call (therefore using a single
-    //connection for everything, which is probably okay for the cases where in-memory
-    //is useful, but in practice, the fact that Connection implements Autocloseable means
-    //that code would constantly be trying to close the Connection and overriding that
-    //behavior is a pain.
-    protected Connection connection;
+    private static class InMemorySQLiteDataSource extends SQLiteDataSource {
+        //We hold on to a connection in this class to keep the shared SQLite in-memory
+        //database alive. In theory, we could also hold onto this connection and
+        //just provide it for every getConnection() call (therefore using a single
+        //connection for everything, which is probably okay for the cases where in-memory
+        //is useful, but in practice, the fact that Connection implements Autocloseable means
+        //that code would constantly be trying to close the Connection and overriding that
+        //behavior is a pain.
+        @SuppressWarnings("unused")
+        private final Connection connection;
+
+        InMemorySQLiteDataSource() {
+            try {
+                Class.forName("org.sqlite.JDBC");
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+
+            setUrl("jdbc:sqlite:file::memory:?cache=shared");
+
+            try {
+                connection = getConnection();
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        @Override
+        public Connection getConnection() throws SQLException {
+            Connection newConnection = super.getConnection();
+            newConnection.createStatement().executeUpdate("PRAGMA foreign_keys = ON");
+            return newConnection;
+        }
+    }
+
+    // We use this field to detect when a new InMemoryConnectionFactory is created. When this
+    // happens, we destroy the data persisted by the old InMemoryConnectionFactory.
+    protected static InMemoryConnectionFactory existingFactory = null;
+
+    protected final DataSource dataSource;
 
     public InMemoryConnectionFactory(
             VisibilityStatusSet visibilityStatusSet,
             List<String> teamIdList,
             List<String> puzzleIdList
     ) throws SQLException {
-        //Store the garbage collection preventing connection
-        this.connection = createDefaultInMemoryConnection();
+        if (existingFactory != null) {
+            existingFactory.destroy();
+        }
+        existingFactory = this;
+
+        dataSource = new InMemorySQLiteDataSource();
+
         //Boot up the initial state of tables
         createInitialConfiguration(visibilityStatusSet, teamIdList, puzzleIdList);
     }
 
-    //Getting a connection just creates a new one
+    @Override
     public Connection getConnection() throws SQLException {
-        return createDefaultInMemoryConnection();
-    }
-
-
-    protected Connection createDefaultInMemoryConnection() throws SQLException {
-        try {
-            Class.forName("org.sqlite.JDBC");
-            //The "?cache=shared" parameter is what allows the in-memory database to be shared
-            //across connections. By default, SQLite in-memory databases work with one Connection
-            //and are collected when that Connection is closed.
-            Connection connection = DriverManager.getConnection("jdbc:sqlite:file::memory:?cache=shared");
-
-            connection.createStatement().executeUpdate("PRAGMA foreign_keys = ON");
-
-            return connection;
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+        return dataSource.getConnection();
     }
 
     @Override
     public DataSource getDataSource() {
-        SQLiteDataSource dataSource = new SQLiteDataSource();
-        dataSource.setUrl("jdbc:sqlite:file::memory:?cache=shared");
         return dataSource;
     }
 
@@ -191,4 +203,17 @@ public class InMemoryConnectionFactory implements ConnectionFactory {
                 ImmutableList.of("writingteam"));
     }
 
+    // Clear the state of the shared database. Useful to run between unit tests.
+    public void destroy() {
+        try (Connection connection = getConnection()) {
+            connection.createStatement().executeUpdate("PRAGMA writable_schema = 1");
+            connection.createStatement().executeUpdate(
+                    "delete from sqlite_master where type in ('table', 'index', 'trigger')");
+            connection.createStatement().executeUpdate("PRAGMA writable_schema = 0");
+            connection.createStatement().executeUpdate("VACUUM");
+            connection.createStatement().executeUpdate("PRAGMA INTEGRITY_CHECK");
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }
