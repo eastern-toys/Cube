@@ -12,29 +12,18 @@ import edu.mit.puzzle.cube.core.events.PeriodicTimerEvent;
 import edu.mit.puzzle.cube.core.model.HuntStatusStore;
 import edu.mit.puzzle.cube.core.model.SubmissionStore;
 import edu.mit.puzzle.cube.core.model.UserStore;
-import edu.mit.puzzle.cube.core.serverresources.*;
+import edu.mit.puzzle.cube.core.serverresources.AbstractCubeResource;
 import edu.mit.puzzle.cube.huntimpl.linearexample.LinearExampleHuntDefinition;
 
 import org.apache.shiro.SecurityUtils;
-import org.apache.shiro.authc.AuthenticationException;
-import org.apache.shiro.authc.UsernamePasswordToken;
 import org.apache.shiro.authc.credential.HashedCredentialsMatcher;
 import org.apache.shiro.mgt.DefaultSecurityManager;
 import org.apache.shiro.mgt.SecurityManager;
 import org.apache.shiro.realm.jdbc.JdbcRealm;
-import org.apache.shiro.subject.Subject;
 import org.restlet.Application;
 import org.restlet.Component;
-import org.restlet.Request;
-import org.restlet.Response;
 import org.restlet.Restlet;
-import org.restlet.data.ChallengeResponse;
-import org.restlet.data.ChallengeScheme;
-import org.restlet.data.Method;
 import org.restlet.data.Protocol;
-import org.restlet.routing.Router;
-import org.restlet.security.ChallengeAuthenticator;
-import org.restlet.security.Verifier;
 import org.restlet.service.CorsService;
 
 import java.sql.SQLException;
@@ -111,62 +100,13 @@ public class CubeApplication extends Application {
 
     @Override
     public synchronized Restlet createInboundRoot() {
-        // Create a router Restlet that routes each call to a new instance of HelloWorldResource.
-        Router router = new Router(getContext());
+        // Put dependencies into the context so that the Resource handlers can access them.
+        getContext().getAttributes().put(AbstractCubeResource.SUBMISSION_STORE_KEY, submissionStore);
+        getContext().getAttributes().put(AbstractCubeResource.HUNT_STATUS_STORE_KEY, huntStatusStore);
+        getContext().getAttributes().put(AbstractCubeResource.USER_STORE_KEY, userStore);
+        getContext().getAttributes().put(AbstractCubeResource.EVENT_PROCESSOR_KEY, eventProcessor);
 
-        //Put dependencies into the router context so that the Resource handlers can access them
-        router.getContext().getAttributes().put(AbstractCubeResource.SUBMISSION_STORE_KEY, submissionStore);
-        router.getContext().getAttributes().put(AbstractCubeResource.HUNT_STATUS_STORE_KEY, huntStatusStore);
-        router.getContext().getAttributes().put(AbstractCubeResource.USER_STORE_KEY, userStore);
-        router.getContext().getAttributes().put(AbstractCubeResource.EVENT_PROCESSOR_KEY, eventProcessor);
-
-        //Define routes
-        router.attach("/submissions", SubmissionsResource.class);
-        router.attach("/submissions/{id}", SubmissionResource.class);
-        router.attach("/visibilities", VisibilitiesResource.class);
-        router.attach("/visibilities/{teamId}/{puzzleId}", VisibilityResource.class);
-        router.attach("/visibilitychanges", VisibilityChangesResource.class);
-        router.attach("/events", EventsResource.class);
-        router.attach("/teams", TeamsResource.class);
-        router.attach("/teams/{id}", TeamResource.class);
-        router.attach("/users/{id}", UserResource.class);
-        router.attach("/authorized", AuthorizedResource.class);
-
-        // Create an authenticator for all routes.
-        ChallengeAuthenticator authenticator = new ChallengeAuthenticator(
-                null,
-                ChallengeScheme.HTTP_BASIC,
-                "Cube"
-        );
-        authenticator.setVerifier((Request request, Response response) -> {
-            if (request.getMethod().equals(Method.OPTIONS)) {
-                return Verifier.RESULT_VALID;
-            }
-
-            Subject subject = SecurityUtils.getSubject();
-
-            // We don't want any sessionization for our stateless RESTful API.
-            if (subject.isAuthenticated() && subject.getSession(false) != null) {
-                subject.logout();
-            }
-
-            ChallengeResponse challengeResponse = request.getChallengeResponse();
-            if (challengeResponse == null) {
-                throw new AuthenticationException(
-                        "Credentials are required, but none were provided.");
-            }
-
-            UsernamePasswordToken token = new UsernamePasswordToken(
-                    challengeResponse.getIdentifier(),
-                    challengeResponse.getSecret()
-            );
-            subject.login(token);
-
-            return Verifier.RESULT_VALID;
-        });
-        authenticator.setNext(router);
-
-        return authenticator;
+        return new CubeRestlet(getContext());
     }
 
     public static void main (String[] args) throws Exception {
