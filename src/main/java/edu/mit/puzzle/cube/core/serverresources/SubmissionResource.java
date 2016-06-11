@@ -46,7 +46,9 @@ public class SubmissionResource extends AbstractCubeResource {
     public PostResult handlePost(Submission submission) {
         int id = getId();
         if (submission.getStatus() == null) {
-            return PostResult.builder().setUpdated(false).build();
+            throw new ResourceException(
+                    Status.CLIENT_ERROR_BAD_REQUEST,
+                    "A status must be specified when updating a submission");
         }
 
         Optional<Submission> existingSubmission = submissionStore.getSubmission(id);

@@ -4,8 +4,10 @@ import edu.mit.puzzle.cube.core.model.PostResult;
 import edu.mit.puzzle.cube.core.model.Visibility;
 
 import org.apache.shiro.SecurityUtils;
+import org.restlet.data.Status;
 import org.restlet.resource.Get;
 import org.restlet.resource.Post;
+import org.restlet.resource.ResourceException;
 
 public class VisibilityResource extends AbstractCubeResource {
 
@@ -46,7 +48,9 @@ public class VisibilityResource extends AbstractCubeResource {
 
         if (visibility.getStatus() == null
                 || !huntStatusStore.getVisibilityStatusSet().isAllowedStatus(visibility.getStatus())) {
-            return PostResult.builder().setUpdated(false).build();
+            throw new ResourceException(
+                    Status.CLIENT_ERROR_BAD_REQUEST,
+                    "A valid status must be specified to update visibility");
         }
 
         boolean changed = huntStatusStore.setVisibility(teamId, puzzleId, visibility.getStatus(), true);

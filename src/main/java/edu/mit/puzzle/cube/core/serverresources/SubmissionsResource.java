@@ -5,8 +5,10 @@ import edu.mit.puzzle.cube.core.model.Submission;
 import edu.mit.puzzle.cube.core.model.Submissions;
 
 import org.apache.shiro.SecurityUtils;
+import org.restlet.data.Status;
 import org.restlet.resource.Get;
 import org.restlet.resource.Post;
+import org.restlet.resource.ResourceException;
 
 public class SubmissionsResource extends AbstractCubeResource {
 
@@ -25,7 +27,9 @@ public class SubmissionsResource extends AbstractCubeResource {
                 submission.getTeamId(),
                 submission.getPuzzleId());
         if (!huntStatusStore.getVisibilityStatusSet().allowsSubmissions(visibilityStatus)) {
-            return PostResult.builder().setCreated(false).build();
+            throw new ResourceException(
+                    Status.CLIENT_ERROR_BAD_REQUEST,
+                    "This submission is not allowed due to puzzle visibility");
         }
 
         boolean success = submissionStore.addSubmission(submission);
