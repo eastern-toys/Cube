@@ -61,10 +61,6 @@ public class InMemoryConnectionFactory implements ConnectionFactory {
         }
     }
 
-    // We use this field to detect when a new InMemoryConnectionFactory is created. When this
-    // happens, we destroy the data persisted by the old InMemoryConnectionFactory.
-    protected static InMemoryConnectionFactory existingFactory = null;
-
     protected final DataSource dataSource;
 
     public InMemoryConnectionFactory(
@@ -72,12 +68,11 @@ public class InMemoryConnectionFactory implements ConnectionFactory {
             List<String> teamIdList,
             List<String> puzzleIdList
     ) throws SQLException {
-        if (existingFactory != null) {
-            existingFactory.destroy();
-        }
-        existingFactory = this;
-
         dataSource = new InMemorySQLiteDataSource();
+
+        // Each time we create a new InMemoryConnectionFactory, clear any state from the shared
+        // in-memory database that may have been introduced by previous instances.
+        clear();
 
         //Boot up the initial state of tables
         createInitialConfiguration(visibilityStatusSet, teamIdList, puzzleIdList);
@@ -215,7 +210,7 @@ public class InMemoryConnectionFactory implements ConnectionFactory {
     }
 
     // Clear the state of the shared database. Useful to run between unit tests.
-    public void destroy() {
+    public void clear() {
         try (Connection connection = getConnection()) {
             connection.createStatement().executeUpdate("PRAGMA writable_schema = 1");
             connection.createStatement().executeUpdate(
