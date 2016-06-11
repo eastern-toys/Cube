@@ -17,6 +17,7 @@ public class CubeJdbcRealm extends JdbcRealm {
     public CubeJdbcRealm() {
         super();
         setCredentialsMatcher(new HashedCredentialsMatcher("SHA-512"));
+        setAuthorizationCachingEnabled(false);
         setPermissionsLookupEnabled(true);
         setSaltStyle(JdbcRealm.SaltStyle.COLUMN);
     }
