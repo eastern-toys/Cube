@@ -20,8 +20,8 @@ public class UsersResource extends AbstractCubeResource {
                 !user.getUsername().isEmpty(),
                 "The username must be non-empty"
         );
-        Preconditions.checkNotNull(
-                user.getPassword(),
+        Preconditions.checkArgument(
+                user.getPassword() != null && !user.getPassword().isEmpty(),
                 "A password must be provided when creating a user"
         );
 

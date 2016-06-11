@@ -17,6 +17,9 @@ import org.restlet.resource.Resource;
 import org.restlet.resource.ResourceException;
 import org.restlet.service.CorsService;
 import org.restlet.service.StatusService;
+import org.sqlite.SQLiteErrorCode;
+
+import java.sql.SQLException;
 
 public class CubeStatusService extends StatusService {
 
@@ -82,6 +85,18 @@ public class CubeStatusService extends StatusService {
             status = Status.CLIENT_ERROR_UNAUTHORIZED;
         } else if (throwable instanceof AuthorizationException) {
             status = Status.CLIENT_ERROR_FORBIDDEN;
+        } else if (throwable instanceof IllegalArgumentException) {
+            status = Status.CLIENT_ERROR_BAD_REQUEST;
+        } else if (throwable instanceof SQLException) {
+            SQLException sqlException = (SQLException) throwable;
+            // TODO: revisit when we switch from SQLite to a real database
+            switch (SQLiteErrorCode.getErrorCode(sqlException.getErrorCode())) {
+            case SQLITE_CONSTRAINT:
+                status = Status.CLIENT_ERROR_BAD_REQUEST;
+                break;
+            default:
+                break;
+            }
         }
         return new Status(status, throwable.getMessage());
     }
