@@ -34,7 +34,7 @@ public class UserStore {
         hashService.setHashAlgorithmName("SHA-512");
     }
 
-    public void addUser(User user, String password, List<String> roles) {
+    public void addUser(User user) {
         try (
                 Connection connection = connectionFactory.getConnection();
                 PreparedStatement insertUserStatement = connection.prepareStatement(
@@ -45,7 +45,7 @@ public class UserStore {
             ByteSource saltByteSource = hashService.getRandomNumberGenerator().nextBytes();
             String salt = Base64.getEncoder().encodeToString(saltByteSource.getBytes());
             Hash passwordHash = hashService.computeHash(new HashRequest.Builder()
-                    .setSource(password)
+                    .setSource(user.getPassword())
                     .setSalt(salt)
                     .build()
             );
@@ -57,10 +57,12 @@ public class UserStore {
             insertUserStatement.setString(3, salt);
             insertUserStatement.executeUpdate();
 
-            insertUserRoleStatement.setString(1, user.getUsername());
-            for (String role : roles) {
-                insertUserRoleStatement.setString(2, role);
-                insertUserRoleStatement.executeUpdate();
+            if (user.getRoles() != null) {
+                insertUserRoleStatement.setString(1, user.getUsername());
+                for (String role : user.getRoles()) {
+                    insertUserRoleStatement.setString(2, role);
+                    insertUserRoleStatement.executeUpdate();
+                }
             }
 
             connection.commit();
@@ -69,6 +71,29 @@ public class UserStore {
                     Status.CLIENT_ERROR_BAD_REQUEST.getCode(),
                     e,
                     "Failed to add user to the database");
+        }
+    }
+
+    public void addUserPermissions(String username, List<String> permissions) {
+        try (
+                Connection connection = connectionFactory.getConnection();
+                PreparedStatement insertPermissionStatement = connection.prepareStatement(
+                        "INSERT INTO users_permissions (username, permission) VALUES (?,?)");
+        ) {
+            connection.setAutoCommit(false);
+
+            insertPermissionStatement.setString(1, username);
+            for (String permission : permissions) {
+                insertPermissionStatement.setString(2, permission);
+                insertPermissionStatement.executeUpdate();
+            }
+
+            connection.commit();
+        } catch (SQLException e) {
+            throw new ResourceException(
+                    Status.CLIENT_ERROR_BAD_REQUEST.getCode(),
+                    e,
+                    "Failed to add permissions to the database");
         }
     }
 

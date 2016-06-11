@@ -16,6 +16,7 @@ import org.restlet.resource.ResourceException;
 import java.sql.SQLException;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 public class UserStoreTest {
     @Rule
@@ -38,12 +39,17 @@ public class UserStoreTest {
 
     @Test
     public void addAndGetUser() {
-        User user = User.builder().setUsername("testuser").build();
-        userStore.addUser(
-                user,
-                "testpassword",
-                ImmutableList.of("writingteam"));
-        assertEquals(user, userStore.getUser("testuser"));
+        User user = User.builder()
+                .setUsername("testuser")
+                .setPassword("testpassword")
+                .setRoles(ImmutableList.of("writingteam"))
+                .build();
+        userStore.addUser(user);
+
+        User readUser = userStore.getUser("testuser");
+        assertEquals(user.getUsername(), readUser.getUsername());
+        assertNull(readUser.getPassword());
+        assertNull(readUser.getRoles());
     }
 
     @Test
@@ -55,10 +61,10 @@ public class UserStoreTest {
     @Test
     public void addUser_roleDoesNotExist() {
         exception.expect(ResourceException.class);
-        User user = User.builder().setUsername("testuser").build();
-        userStore.addUser(
-                user,
-                "testpassword",
-                ImmutableList.of("nonexistentrole"));
+        userStore.addUser(User.builder()
+                .setUsername("testuser")
+                .setPassword("testpassword")
+                .setRoles(ImmutableList.of("nonexistentrole"))
+                .build());
     }
 }

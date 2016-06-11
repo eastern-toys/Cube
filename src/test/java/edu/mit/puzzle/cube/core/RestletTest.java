@@ -48,7 +48,7 @@ public abstract class RestletTest {
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     protected static final ChallengeResponse ADMIN_CREDENTIALS =
-            new ChallengeResponse(ChallengeScheme.HTTP_BASIC, "admin", "adminpassword");
+            new ChallengeResponse(ChallengeScheme.HTTP_BASIC, "adminuser", "adminpassword");
     protected static final ChallengeResponse TESTERTEAM_CREDENTIALS =
             new ChallengeResponse(ChallengeScheme.HTTP_BASIC, "testerteam", "testerteampassword");
 

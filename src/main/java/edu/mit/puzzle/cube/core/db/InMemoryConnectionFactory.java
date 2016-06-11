@@ -148,12 +148,17 @@ public class InMemoryConnectionFactory implements ConnectionFactory {
                 "(username VARCHAR(40), role_name VARCHAR(40), " +
                 "FOREIGN KEY(username) REFERENCES users(username), " +
                 "FOREIGN KEY(role_name) REFERENCES roles(role_name))";
+        String createUsersPermissionsTableSql = "CREATE TABLE IF NOT EXISTS users_permissions " +
+                "(username VARCHAR(40), permission VARCHAR(40), " +
+                "PRIMARY KEY(username, permission), " +
+                "FOREIGN KEY(username) REFERENCES users(username))";
 
         List<String> createTableSqls = Lists.newArrayList(
                 createRunTableSql,
                 createTeamsTableSql, createTeamPropertiesTableSql, createPuzzlesTableSql,
                 createSubmissionsTableSql, createVisibilitiesTableSql, createVisibilityHistoriesTableSql,
-                createRolesTableSql, createRolesPermissionsTableSql, createUsersTableSql, createUserRolesTableSql);
+                createRolesTableSql, createRolesPermissionsTableSql,
+                createUsersTableSql, createUserRolesTableSql, createUsersPermissionsTableSql);
         for (String createTableSql : createTableSqls) {
             DatabaseHelper.update(
                     this,
@@ -193,14 +198,16 @@ public class InMemoryConnectionFactory implements ConnectionFactory {
         ));
 
         UserStore userStore = new UserStore(this);
-        userStore.addUser(
-                User.builder().setUsername("adminuser").build(),
-                "adminpassword",
-                ImmutableList.of("admin"));
-        userStore.addUser(
-                User.builder().setUsername("writingteamuser").build(),
-                "writingteampassword",
-                ImmutableList.of("writingteam"));
+        userStore.addUser(User.builder()
+                .setUsername("adminuser")
+                .setPassword("adminpassword")
+                .setRoles(ImmutableList.of("admin"))
+                .build());
+        userStore.addUser(User.builder()
+                .setUsername("writingteamuser")
+                .setPassword("writingteampassword")
+                .setRoles(ImmutableList.of("writingteam"))
+                .build());
     }
 
     // Clear the state of the shared database. Useful to run between unit tests.

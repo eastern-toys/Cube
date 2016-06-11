@@ -5,6 +5,7 @@ import com.google.common.util.concurrent.AbstractScheduledService;
 import com.google.common.util.concurrent.Service;
 
 import edu.mit.puzzle.cube.core.db.ConnectionFactory;
+import edu.mit.puzzle.cube.core.db.CubeJdbcRealm;
 import edu.mit.puzzle.cube.core.environments.DevelopmentEnvironment;
 import edu.mit.puzzle.cube.core.environments.ServiceEnvironment;
 import edu.mit.puzzle.cube.core.events.CompositeEventProcessor;
@@ -88,11 +89,8 @@ public class CubeApplication extends Application {
     }
 
     private void setupAuthentication(ConnectionFactory connectionFactory) {
-        JdbcRealm realm = new JdbcRealm();
-        realm.setCredentialsMatcher(new HashedCredentialsMatcher("SHA-512"));
+        CubeJdbcRealm realm = new CubeJdbcRealm();
         realm.setDataSource(connectionFactory.getDataSource());
-        realm.setPermissionsLookupEnabled(true);
-        realm.setSaltStyle(JdbcRealm.SaltStyle.COLUMN);
 
         SecurityManager securityManager = new DefaultSecurityManager(realm);
         SecurityUtils.setSecurityManager(securityManager);
