@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
     @JsonSubTypes.Type(FullReleaseEvent.class),
     @JsonSubTypes.Type(HuntStartEvent.class),
     @JsonSubTypes.Type(PeriodicTimerEvent.class),
+    @JsonSubTypes.Type(SubmissionChangeEvent.class),
     @JsonSubTypes.Type(SubmissionCompleteEvent.class),
     @JsonSubTypes.Type(VisibilityChangeEvent.class),
 })

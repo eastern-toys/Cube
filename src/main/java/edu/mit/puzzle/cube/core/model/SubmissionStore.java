@@ -8,6 +8,7 @@ import edu.mit.puzzle.cube.core.db.ConnectionFactory;
 import edu.mit.puzzle.cube.core.db.DatabaseHelper;
 import edu.mit.puzzle.cube.core.events.Event;
 import edu.mit.puzzle.cube.core.events.EventProcessor;
+import edu.mit.puzzle.cube.core.events.SubmissionChangeEvent;
 import edu.mit.puzzle.cube.core.events.SubmissionCompleteEvent;
 
 import org.slf4j.Logger;
@@ -51,8 +52,12 @@ public class SubmissionStore {
         this.eventProcessor = checkNotNull(eventProcessor);
     }
 
+    private void produceSubmissionChangeEvent() {
+        eventProcessor.process(SubmissionChangeEvent.builder().build());
+    }
+
     public boolean addSubmission(Submission submission) {
-        return DatabaseHelper.insert(
+        Optional<Integer> key = DatabaseHelper.insert(
                 connectionFactory,
                 "INSERT INTO submissions (puzzleId, teamId, submission, timestamp) " +
                         "VALUES (?,?,?,?)",
@@ -61,7 +66,11 @@ public class SubmissionStore {
                         submission.getTeamId(),
                         submission.getSubmission(),
                         clock.instant())
-        ).isPresent();
+        );
+        if (key.isPresent()) {
+            produceSubmissionChangeEvent();
+        }
+        return key.isPresent();
     }
 
     private static Submission generateSubmissionObject(Map<String,Object> rowMap) {
@@ -116,6 +125,10 @@ public class SubmissionStore {
                 "WHERE submissionId = ? AND (status <> ? OR callerUsername <> ?)",
                 Lists.newArrayList(status, callerUsername, submissionId, status, callerUsername)
         ) > 0;
+
+        if (updated) {
+            produceSubmissionChangeEvent();
+        }
 
         if (updated && status.isTerminal()) {
             Submission submission = this.getSubmission(submissionId).get();

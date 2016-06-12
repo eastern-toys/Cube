@@ -9,7 +9,9 @@ import edu.mit.puzzle.cube.core.db.CubeJdbcRealm;
 import edu.mit.puzzle.cube.core.environments.DevelopmentEnvironment;
 import edu.mit.puzzle.cube.core.environments.ServiceEnvironment;
 import edu.mit.puzzle.cube.core.events.CompositeEventProcessor;
+import edu.mit.puzzle.cube.core.events.EventPublisher;
 import edu.mit.puzzle.cube.core.events.PeriodicTimerEvent;
+import edu.mit.puzzle.cube.core.events.SubmissionChangeEvent;
 import edu.mit.puzzle.cube.core.model.HuntStatusStore;
 import edu.mit.puzzle.cube.core.model.SubmissionStore;
 import edu.mit.puzzle.cube.core.model.UserStore;
@@ -71,6 +73,12 @@ public class CubeApplication extends Application {
                 eventProcessor,
                 huntStatusStore
         );
+
+        eventProcessor.addEventProcessor(
+                SubmissionChangeEvent.class,
+                new EventPublisher<SubmissionChangeEvent>(
+                        getContext(),
+                        "http://192.168.1.2:8002/postrefreshevent"));
 
         timingEventService = new AbstractScheduledService() {
             @Override
