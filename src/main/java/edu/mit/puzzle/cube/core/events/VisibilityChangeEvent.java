@@ -21,9 +21,5 @@ public abstract class VisibilityChangeEvent extends Event {
         return new AutoValue_VisibilityChangeEvent.Builder();
     }
 
-    public String getType() {
-        return "VisibilityChange";
-    }
-
     @JsonProperty("visibility") public abstract Visibility getVisibility();
 }

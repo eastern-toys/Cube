@@ -7,7 +7,6 @@ import edu.mit.puzzle.cube.core.HuntDefinition;
 import edu.mit.puzzle.cube.core.db.ConnectionFactory;
 import edu.mit.puzzle.cube.core.db.InMemoryConnectionFactory;
 import edu.mit.puzzle.cube.core.model.User;
-import edu.mit.puzzle.cube.core.model.UserStore;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -55,16 +54,6 @@ public class DevelopmentEnvironment implements ServiceEnvironment {
             );
         } catch (SQLException e) {
             throw new RuntimeException(e);
-        }
-
-        UserStore userStore = new UserStore(this.inMemoryConnectionFactory);
-        for (String teamId : teamIdList) {
-            List<String> instanceLevelPermissions = ImmutableList.of(
-                    "userinfo:read:" + teamId,
-                    "teaminfo:read:" + teamId,
-                    "submissions:read,create:" + teamId,
-                    "visibilities:read:" + teamId);
-            userStore.addUserPermissions(teamId, instanceLevelPermissions);
         }
     }
 

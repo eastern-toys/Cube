@@ -40,13 +40,44 @@ public class AuthorizationTest extends RestletTest {
         currentUserCredentials = NEWTEAM_CREDENTIALS;
 
         json = get(String.format(
-                "/authorized?permission=userinfo:read:%s",
+                "/authorized?permission=users:read:%s",
+                NEWTEAM_CREDENTIALS.getIdentifier()
+        ));
+        assertTrue(json.has("authorized"));
+        assertFalse(json.get("authorized").asBoolean());
+
+        json = get("/authorized?permission=users:read:anotheruser");
+        assertTrue(json.has("authorized"));
+        assertFalse(json.get("authorized").asBoolean());
+
+        json = get("/authorized?permission=events:create:HuntStart");
+        assertTrue(json.has("authorized"));
+        assertFalse(json.get("authorized").asBoolean());
+    }
+
+    @Test
+    public void createAndAuthorizeUser_solvingTeamRole() {
+        JsonNode json = post("/teams", String.format(
+                "{\"teamId\":\"%s\",\"password\":\"%s\"}",
+                NEWTEAM_CREDENTIALS.getIdentifier(),
+                new String(NEWTEAM_CREDENTIALS.getSecret())
+        ));
+        assertTrue(json.has("created"));
+        assertTrue(json.get("created").asBoolean());
+
+        json = get(String.format("/users/%s", NEWTEAM_CREDENTIALS.getIdentifier()));
+        assertEquals(NEWTEAM_CREDENTIALS.getIdentifier(), json.get("username").asText());
+
+        currentUserCredentials = NEWTEAM_CREDENTIALS;
+
+        json = get(String.format(
+                "/authorized?permission=users:read:%s",
                 NEWTEAM_CREDENTIALS.getIdentifier()
         ));
         assertTrue(json.has("authorized"));
         assertTrue(json.get("authorized").asBoolean());
 
-        json = get("/authorized?permission=userinfo:read:anotheruser");
+        json = get("/authorized?permission=users:read:anotheruser");
         assertTrue(json.has("authorized"));
         assertFalse(json.get("authorized").asBoolean());
 

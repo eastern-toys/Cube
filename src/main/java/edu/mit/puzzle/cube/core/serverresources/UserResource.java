@@ -1,6 +1,8 @@
 package edu.mit.puzzle.cube.core.serverresources;
 
 import edu.mit.puzzle.cube.core.model.User;
+import edu.mit.puzzle.cube.core.permissions.PermissionAction;
+import edu.mit.puzzle.cube.core.permissions.UsersPermission;
 
 import org.apache.shiro.SecurityUtils;
 import org.restlet.resource.Get;
@@ -18,7 +20,8 @@ public class UserResource extends AbstractCubeResource {
     @Get
     public User handleGet() {
         String id = getId();
-        SecurityUtils.getSubject().checkPermission("userinfo:read:" + id);
+        SecurityUtils.getSubject().checkPermission(
+                new UsersPermission(id, PermissionAction.READ));
         return userStore.getUser(id);
     }
 }

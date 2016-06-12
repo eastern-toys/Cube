@@ -13,6 +13,7 @@ import edu.mit.puzzle.cube.core.model.HuntStatusStore;
 import edu.mit.puzzle.cube.core.model.SubmissionStore;
 import edu.mit.puzzle.cube.core.model.UserStore;
 import edu.mit.puzzle.cube.core.model.VisibilityStatusSet;
+import edu.mit.puzzle.cube.core.permissions.CubeRole;
 import edu.mit.puzzle.cube.core.serverresources.AbstractCubeResource;
 import edu.mit.puzzle.cube.modules.model.StandardVisibilityStatusSet;
 
@@ -143,17 +144,17 @@ public abstract class RestletTest {
     protected Realm createAuthenticationRealm() {
         SimpleAccountRealm realm = new SimpleAccountRealm();
 
-        realm.addRole("admin");
+        realm.addRole(CubeRole.ADMIN.getName());
         realm.addAccount(
                 ADMIN_CREDENTIALS.getIdentifier(),
                 new String(ADMIN_CREDENTIALS.getSecret()),
-                "admin"
+                CubeRole.ADMIN.getName()
         );
 
         realm.setRolePermissionResolver((String role) -> {
             switch (role) {
             case "admin":
-                return ImmutableList.of(new WildcardPermission("*"));
+                return ImmutableList.copyOf(CubeRole.ADMIN.getPermissions());
             }
             return ImmutableList.<Permission>of();
         });

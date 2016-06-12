@@ -16,8 +16,4 @@ public abstract class PeriodicTimerEvent extends Event {
     public static Builder builder() {
         return new AutoValue_PeriodicTimerEvent.Builder();
     }
-
-    public String getType() {
-        return "PeriodicTimer";
-    }
 }

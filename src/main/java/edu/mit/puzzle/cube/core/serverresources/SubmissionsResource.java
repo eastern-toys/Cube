@@ -3,6 +3,8 @@ package edu.mit.puzzle.cube.core.serverresources;
 import edu.mit.puzzle.cube.core.model.PostResult;
 import edu.mit.puzzle.cube.core.model.Submission;
 import edu.mit.puzzle.cube.core.model.Submissions;
+import edu.mit.puzzle.cube.core.permissions.PermissionAction;
+import edu.mit.puzzle.cube.core.permissions.SubmissionsPermission;
 
 import org.apache.shiro.SecurityUtils;
 import org.restlet.data.Status;
@@ -14,7 +16,8 @@ public class SubmissionsResource extends AbstractCubeResource {
 
     @Get
     public Submissions handleGet() {
-        SecurityUtils.getSubject().checkPermission("submissions:read");
+        SecurityUtils.getSubject().checkPermission(
+                new SubmissionsPermission("*", PermissionAction.READ));
         return Submissions.builder()
                 .setSubmissions(submissionStore.getAllSubmissions())
                 .build();
@@ -22,7 +25,8 @@ public class SubmissionsResource extends AbstractCubeResource {
 
     @Post
     public PostResult handlePost(Submission submission) {
-        SecurityUtils.getSubject().checkPermission("submissions:create:" + submission.getTeamId());
+        SecurityUtils.getSubject().checkPermission(
+                new SubmissionsPermission(submission.getTeamId(), PermissionAction.CREATE));
         String visibilityStatus = huntStatusStore.getVisibility(
                 submission.getTeamId(),
                 submission.getPuzzleId());

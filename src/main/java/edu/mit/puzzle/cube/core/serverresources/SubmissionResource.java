@@ -2,6 +2,8 @@ package edu.mit.puzzle.cube.core.serverresources;
 
 import edu.mit.puzzle.cube.core.model.PostResult;
 import edu.mit.puzzle.cube.core.model.Submission;
+import edu.mit.puzzle.cube.core.permissions.PermissionAction;
+import edu.mit.puzzle.cube.core.permissions.SubmissionsPermission;
 
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.subject.Subject;
@@ -33,7 +35,7 @@ public class SubmissionResource extends AbstractCubeResource {
 
         if (submission.isPresent()) {
             SecurityUtils.getSubject().checkPermission(
-                    "submissions:read:" + submission.get().getTeamId());
+                    new SubmissionsPermission(submission.get().getTeamId(), PermissionAction.READ));
             return submission.get();
         } else {
             throw new ResourceException(
@@ -59,7 +61,8 @@ public class SubmissionResource extends AbstractCubeResource {
         }
 
         Subject subject = SecurityUtils.getSubject();
-        subject.checkPermission("submissions:update:" + existingSubmission.get().getTeamId());
+        subject.checkPermission(
+                new SubmissionsPermission(existingSubmission.get().getTeamId(), PermissionAction.UPDATE));
 
         String callerUsername = null;
         if (submission.getStatus().isAssigned()) {

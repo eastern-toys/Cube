@@ -7,11 +7,14 @@ import edu.mit.puzzle.cube.core.model.SubmissionStatus;
 import edu.mit.puzzle.cube.core.model.User;
 import edu.mit.puzzle.cube.core.model.UserStore;
 import edu.mit.puzzle.cube.core.model.VisibilityStatusSet;
+import edu.mit.puzzle.cube.core.permissions.CubePermission;
+import edu.mit.puzzle.cube.core.permissions.CubeRole;
 
 import org.sqlite.SQLiteDataSource;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -183,24 +186,21 @@ public class InMemoryConnectionFactory implements ConnectionFactory {
                 .collect(Collectors.toList());
         DatabaseHelper.insertBatch(this, insertPuzzleSql, parameterLists);
 
+        List<List<Object>> roleInserts = new ArrayList<>();
+        List<List<Object>> rolePermissionInserts = new ArrayList<>();
+        for (CubeRole role : ImmutableList.of(CubeRole.ADMIN, CubeRole.WRITING_TEAM)) {
+            roleInserts.add(ImmutableList.of(role.getName()));
+            for (CubePermission permission : role.getPermissions()) {
+                rolePermissionInserts.add(
+                        ImmutableList.of(role.getName(), permission.getWildcardString()));
+            }
+        }
         String insertRolesSql =
                 "INSERT INTO roles (role_name) VALUES (?)";
-        DatabaseHelper.insertBatch(this, insertRolesSql, ImmutableList.of(
-                ImmutableList.of("admin"),
-                ImmutableList.of("writingteam")
-        ));
-
+        DatabaseHelper.insertBatch(this, insertRolesSql, roleInserts);
         String insertRolesPermissionsSql =
                 "INSERT INTO roles_permissions (role_name, permission) VALUES (?,?)";
-        DatabaseHelper.insertBatch(this, insertRolesPermissionsSql, ImmutableList.of(
-                ImmutableList.of("admin", "*"),
-                ImmutableList.of("writingteam", "users:read"),
-                ImmutableList.of("writingteam", "userinfo:read:*"),
-                ImmutableList.of("writingteam", "teams:read"),
-                ImmutableList.of("writingteam", "teaminfo:read:*"),
-                ImmutableList.of("writingteam", "submissions:read,update:*"),
-                ImmutableList.of("writingteam", "visibilities:read:*")
-        ));
+        DatabaseHelper.insertBatch(this, insertRolesPermissionsSql, rolePermissionInserts);
 
         UserStore userStore = new UserStore(this);
         for (User user : userList) {

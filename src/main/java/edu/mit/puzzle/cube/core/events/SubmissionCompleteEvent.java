@@ -21,9 +21,5 @@ public abstract class SubmissionCompleteEvent extends Event {
         return new AutoValue_SubmissionCompleteEvent.Builder();
     }
 
-    public String getType() {
-        return "SubmissionComplete";
-    }
-
     @JsonProperty("submission") public abstract Submission getSubmission();
 }

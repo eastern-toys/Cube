@@ -12,5 +12,4 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
     @JsonSubTypes.Type(VisibilityChangeEvent.class),
 })
 public abstract class Event {
-    public abstract String getType();
 }

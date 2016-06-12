@@ -16,8 +16,4 @@ public abstract class HuntStartEvent extends Event {
     public static Builder builder() {
         return new AutoValue_HuntStartEvent.Builder();
     }
-
-    public String getType() {
-        return "HuntStart";
-    }
 }

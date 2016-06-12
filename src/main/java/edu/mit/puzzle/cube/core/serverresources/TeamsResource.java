@@ -1,26 +1,27 @@
 package edu.mit.puzzle.cube.core.serverresources;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
 import edu.mit.puzzle.cube.core.model.PostResult;
 import edu.mit.puzzle.cube.core.model.Team;
 import edu.mit.puzzle.cube.core.model.Teams;
 import edu.mit.puzzle.cube.core.model.User;
+import edu.mit.puzzle.cube.core.permissions.PermissionAction;
+import edu.mit.puzzle.cube.core.permissions.TeamsPermission;
 
 import org.apache.shiro.SecurityUtils;
 import org.restlet.resource.Get;
 import org.restlet.resource.Post;
 
-import java.util.List;
 import java.util.stream.Collectors;
 
 public class TeamsResource extends AbstractCubeResource {
 
     @Get
     public Teams handleGet() {
-        SecurityUtils.getSubject().checkPermission("teams:read");
+        SecurityUtils.getSubject().checkPermission(
+                new TeamsPermission("*", PermissionAction.READ));
         return Teams.builder()
                 .setTeams(huntStatusStore.getTeamIds().stream()
                         .map(teamId -> Team.builder()
@@ -34,7 +35,8 @@ public class TeamsResource extends AbstractCubeResource {
 
     @Post
     public PostResult handlePost(Team team) {
-        SecurityUtils.getSubject().checkPermission("teams:create");
+        SecurityUtils.getSubject().checkPermission(
+                new TeamsPermission(team.getTeamId(), PermissionAction.CREATE));
         Preconditions.checkArgument(
                 !team.getTeamId().isEmpty(),
                 "The team id must be non-empty"
@@ -45,18 +47,13 @@ public class TeamsResource extends AbstractCubeResource {
         );
 
         huntStatusStore.addTeam(team);
-        userStore.addUser(User.builder()
+
+        User user = User.builder()
                 .setUsername(team.getTeamId())
                 .setPassword(team.getPassword())
                 .setTeamId(team.getTeamId())
-                .build());
-
-        List<String> instanceLevelPermissions = ImmutableList.of(
-                "userinfo:read:" + team.getTeamId(),
-                "teaminfo:read:" + team.getTeamId(),
-                "submissions:read,create:" + team.getTeamId(),
-                "visibilities:read:" + team.getTeamId());
-        userStore.addUserPermissions(team.getTeamId(), instanceLevelPermissions);
+                .build();
+        userStore.addUser(user);
 
         return PostResult.builder().setCreated(true).build();
     }

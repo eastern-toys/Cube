@@ -1,6 +1,8 @@
 package edu.mit.puzzle.cube.core.serverresources;
 
 import edu.mit.puzzle.cube.core.model.Visibilities;
+import edu.mit.puzzle.cube.core.permissions.PermissionAction;
+import edu.mit.puzzle.cube.core.permissions.VisibilitiesPermission;
 
 import org.apache.shiro.SecurityUtils;
 import org.restlet.resource.Get;
@@ -13,9 +15,11 @@ public class VisibilitiesResource extends AbstractCubeResource {
     public Visibilities handleGet() {
         Optional<String> teamId = Optional.ofNullable(getQueryValue("teamId"));
         if (teamId.isPresent()) {
-            SecurityUtils.getSubject().checkPermission("visibilities:read:" + teamId.get());
+            SecurityUtils.getSubject().checkPermission(
+                    new VisibilitiesPermission(teamId.get(), PermissionAction.READ));
         } else {
-            SecurityUtils.getSubject().checkPermission("visibilities:read");
+            SecurityUtils.getSubject().checkPermission(
+                    new VisibilitiesPermission("*", PermissionAction.READ));
         }
         Optional<String> puzzleId = Optional.ofNullable(getQueryValue("puzzleId"));
         return Visibilities.builder()

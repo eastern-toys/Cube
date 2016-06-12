@@ -5,6 +5,9 @@ import com.google.common.collect.Table;
 
 import edu.mit.puzzle.cube.core.db.ConnectionFactory;
 import edu.mit.puzzle.cube.core.db.DatabaseHelper;
+import edu.mit.puzzle.cube.core.permissions.CubePermission;
+import edu.mit.puzzle.cube.core.permissions.CubeRole;
+import edu.mit.puzzle.cube.core.permissions.RolesAndInstanceLevelPermissions;
 
 import org.apache.shiro.crypto.hash.DefaultHashService;
 import org.apache.shiro.crypto.hash.Hash;
@@ -18,7 +21,6 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.Base64;
-import java.util.List;
 import java.util.Map;
 
 public class UserStore {
@@ -36,21 +38,49 @@ public class UserStore {
     }
 
     public void addUser(User user) {
+        ByteSource saltByteSource = hashService.getRandomNumberGenerator().nextBytes();
+        String salt = Base64.getEncoder().encodeToString(saltByteSource.getBytes());
+        Hash passwordHash = hashService.computeHash(new HashRequest.Builder()
+                .setSource(user.getPassword())
+                .setSalt(salt)
+                .build()
+        );
+
+        RolesAndInstanceLevelPermissions rolesAndPermissions = RolesAndInstanceLevelPermissions.NONE;
+        if (user.getTeamId() != null) {
+            rolesAndPermissions = RolesAndInstanceLevelPermissions.forSolvingTeam(user.getTeamId());
+        }
+        if (user.getRoles() != null) {
+            for (String roleName : user.getRoles()) {
+                RolesAndInstanceLevelPermissions newRolesAndPermissions = null;
+                switch (roleName) {
+                case "writingteam":
+                    newRolesAndPermissions =
+                            RolesAndInstanceLevelPermissions.forWritingTeam(user.getUsername());
+                    break;
+                case "admin":
+                    newRolesAndPermissions = RolesAndInstanceLevelPermissions.forAdmin();
+                    break;
+                default:
+                    throw new ResourceException(
+                            Status.CLIENT_ERROR_BAD_REQUEST,
+                            String.format("Unknown role '%s'", roleName));
+                }
+                if (newRolesAndPermissions != null) {
+                    rolesAndPermissions = rolesAndPermissions.merge(newRolesAndPermissions);
+                }
+            }
+        }
+
         try (
                 Connection connection = connectionFactory.getConnection();
                 PreparedStatement insertUserStatement = connection.prepareStatement(
                         "INSERT INTO users (username, password, password_salt, teamId) VALUES (?,?,?,?)");
                 PreparedStatement insertUserRoleStatement = connection.prepareStatement(
-                        "INSERT INTO user_roles (username, role_name) VALUES (?,?)")
+                        "INSERT INTO user_roles (username, role_name) VALUES (?,?)");
+                PreparedStatement insertPermissionStatement = connection.prepareStatement(
+                        "INSERT INTO users_permissions (username, permission) VALUES (?,?)")
         ) {
-            ByteSource saltByteSource = hashService.getRandomNumberGenerator().nextBytes();
-            String salt = Base64.getEncoder().encodeToString(saltByteSource.getBytes());
-            Hash passwordHash = hashService.computeHash(new HashRequest.Builder()
-                    .setSource(user.getPassword())
-                    .setSalt(salt)
-                    .build()
-            );
-
             connection.setAutoCommit(false);
 
             insertUserStatement.setString(1, user.getUsername());
@@ -63,34 +93,15 @@ public class UserStore {
             }
             insertUserStatement.executeUpdate();
 
-            if (user.getRoles() != null) {
-                insertUserRoleStatement.setString(1, user.getUsername());
-                for (String role : user.getRoles()) {
-                    insertUserRoleStatement.setString(2, role);
-                    insertUserRoleStatement.executeUpdate();
-                }
+            insertUserRoleStatement.setString(1, user.getUsername());
+            for (CubeRole role : rolesAndPermissions.getRoles()) {
+                insertUserRoleStatement.setString(2, role.getName());
+                insertUserRoleStatement.executeUpdate();
             }
 
-            connection.commit();
-        } catch (SQLException e) {
-            throw new ResourceException(
-                    Status.CLIENT_ERROR_BAD_REQUEST.getCode(),
-                    e,
-                    "Failed to add user to the database");
-        }
-    }
-
-    public void addUserPermissions(String username, List<String> permissions) {
-        try (
-                Connection connection = connectionFactory.getConnection();
-                PreparedStatement insertPermissionStatement = connection.prepareStatement(
-                        "INSERT INTO users_permissions (username, permission) VALUES (?,?)");
-        ) {
-            connection.setAutoCommit(false);
-
-            insertPermissionStatement.setString(1, username);
-            for (String permission : permissions) {
-                insertPermissionStatement.setString(2, permission);
+            insertPermissionStatement.setString(1, user.getUsername());
+            for (CubePermission permission : rolesAndPermissions.getInstanceLevelPermissions()) {
+                insertPermissionStatement.setString(2, permission.getWildcardString());
                 insertPermissionStatement.executeUpdate();
             }
 
@@ -99,7 +110,7 @@ public class UserStore {
             throw new ResourceException(
                     Status.CLIENT_ERROR_BAD_REQUEST.getCode(),
                     e,
-                    "Failed to add permissions to the database");
+                    "Failed to add user to the database");
         }
     }
 
