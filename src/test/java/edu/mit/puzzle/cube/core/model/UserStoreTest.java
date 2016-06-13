@@ -15,8 +15,7 @@ import org.restlet.resource.ResourceException;
 
 import java.sql.SQLException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static com.google.common.truth.Truth.assertThat;
 
 public class UserStoreTest {
     @Rule
@@ -48,9 +47,9 @@ public class UserStoreTest {
         userStore.addUser(user);
 
         User readUser = userStore.getUser("testuser");
-        assertEquals(user.getUsername(), readUser.getUsername());
-        assertNull(readUser.getPassword());
-        assertNull(readUser.getRoles());
+        assertThat(user.getUsername()).isEqualTo(readUser.getUsername());
+        assertThat(readUser.getPassword()).isNull();
+        assertThat(readUser.getRoles()).containsExactly("writingteam");
     }
 
     @Test
@@ -67,5 +66,58 @@ public class UserStoreTest {
                 .setPassword("testpassword")
                 .setRoles(ImmutableList.of("nonexistentrole"))
                 .build());
+    }
+
+    @Test
+    public void updateUser_noChange() {
+        User user = User.builder()
+                .setUsername("testuser")
+                .setPassword("testpassword")
+                .setRoles(ImmutableList.of("writingteam"))
+                .build();
+        userStore.addUser(user);
+
+        user = user.toBuilder()
+                .setPassword(null)
+                .build();
+        assertThat(userStore.updateUser(user)).isFalse();
+    }
+
+    @Test
+    public void updateUser_changePassword() {
+        User user = User.builder()
+                .setUsername("testuser")
+                .setPassword("testpassword")
+                .setRoles(ImmutableList.of("writingteam"))
+                .build();
+        userStore.addUser(user);
+
+        user = user.toBuilder()
+                .setPassword("newpassword")
+                .build();
+        assertThat(userStore.updateUser(user)).isTrue();
+
+        // Trying to update the new password again should fail (since there's no actual password change).
+        exception.expect(ResourceException.class);
+        userStore.updateUser(user);
+    }
+
+    @Test
+    public void updateUser_changeRole() {
+        User user = User.builder()
+                .setUsername("testuser")
+                .setPassword("testpassword")
+                .setRoles(ImmutableList.of("writingteam"))
+                .build();
+        userStore.addUser(user);
+
+        user = user.toBuilder()
+                .setPassword(null)
+                .setRoles(ImmutableList.of("admin"))
+                .build();
+        assertThat(userStore.updateUser(user)).isTrue();
+
+        User readUser = userStore.getUser("testuser");
+        assertThat(readUser.getRoles()).containsExactly("admin");
     }
 }

@@ -32,6 +32,8 @@ public abstract class User {
         return new AutoValue_User.Builder();
     }
 
+    public abstract Builder toBuilder();
+
     @JsonProperty("username") public abstract String getUsername();
 
     @Nullable

@@ -4,10 +4,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import edu.mit.puzzle.cube.core.db.CubeJdbcRealm;
 
+import org.apache.shiro.authz.AuthorizationException;
 import org.apache.shiro.realm.Realm;
 import org.junit.Test;
 import org.restlet.data.ChallengeResponse;
 import org.restlet.data.ChallengeScheme;
+import org.restlet.data.Status;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -113,5 +115,63 @@ public class AuthorizationTest extends RestletTest {
         json = get("/authorized?permission=events:create:HuntStart");
         assertTrue(json.has("authorized"));
         assertFalse(json.get("authorized").asBoolean());
+
+        Status status = postExpectFailure("/users/" + username, String.format(
+                "{\"username\":\"%s\",\"roles\":[\"admin\"]}",
+                username));
+        assertTrue(status.getThrowable() instanceof AuthorizationException);
+
+        json = post("/users/" + username, String.format(
+                "{\"username\":\"%s\",\"password\":\"changedpassword\"}",
+                username));
+        assertTrue(json.has("updated"));
+        assertTrue(json.get("updated").asBoolean());
+    }
+
+    @Test
+    public void changeUserRole() {
+        JsonNode json = post("/teams", String.format(
+                "{\"teamId\":\"%s\",\"password\":\"%s\"}",
+                NEWTEAM_CREDENTIALS.getIdentifier(),
+                new String(NEWTEAM_CREDENTIALS.getSecret())
+        ));
+        assertTrue(json.has("created"));
+        assertTrue(json.get("created").asBoolean());
+
+        currentUserCredentials = NEWTEAM_CREDENTIALS;
+
+        json = get("/authorized?permission=submissions:create:" + NEWTEAM_CREDENTIALS.getIdentifier());
+        assertTrue(json.has("authorized"));
+        assertTrue(json.get("authorized").asBoolean());
+
+        json = get("/authorized?permission=submissions:update:" + NEWTEAM_CREDENTIALS.getIdentifier());
+        assertTrue(json.has("authorized"));
+        assertFalse(json.get("authorized").asBoolean());
+
+        json = get("/authorized?permission=users:update:" + NEWTEAM_CREDENTIALS.getIdentifier());
+        assertTrue(json.has("authorized"));
+        assertFalse(json.get("authorized").asBoolean());
+
+        currentUserCredentials = ADMIN_CREDENTIALS;
+
+        json = post("/users/" + NEWTEAM_CREDENTIALS.getIdentifier(), String.format(
+                "{\"username\":\"%s\",\"roles\":[\"writingteam\"]}",
+                NEWTEAM_CREDENTIALS.getIdentifier()));
+        assertTrue(json.has("updated"));
+        assertTrue(json.get("updated").asBoolean());
+
+        currentUserCredentials = NEWTEAM_CREDENTIALS;
+
+        json = get("/authorized?permission=submissions:create:" + NEWTEAM_CREDENTIALS.getIdentifier());
+        assertTrue(json.has("authorized"));
+        assertTrue(json.get("authorized").asBoolean());
+
+        json = get("/authorized?permission=submissions:update:" + NEWTEAM_CREDENTIALS.getIdentifier());
+        assertTrue(json.has("authorized"));
+        assertTrue(json.get("authorized").asBoolean());
+
+        json = get("/authorized?permission=users:update:" + NEWTEAM_CREDENTIALS.getIdentifier());
+        assertTrue(json.has("authorized"));
+        assertTrue(json.get("authorized").asBoolean());
     }
 }

@@ -12,6 +12,7 @@ public abstract class CubeRole {
             "writingteam",
             ImmutableList.of(
                     new UsersPermission("*", PermissionAction.READ),
+                    new UserRolesPermission("*", PermissionAction.READ),
                     new TeamsPermission("*", PermissionAction.READ),
                     new SubmissionsPermission("*", PermissionAction.READ, PermissionAction.UPDATE),
                     new VisibilitiesPermission("*", PermissionAction.READ)

@@ -20,7 +20,6 @@ import edu.mit.puzzle.cube.modules.model.StandardVisibilityStatusSet;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.UnavailableSecurityManagerException;
 import org.apache.shiro.authz.Permission;
-import org.apache.shiro.authz.permission.WildcardPermission;
 import org.apache.shiro.mgt.DefaultSecurityManager;
 import org.apache.shiro.mgt.SecurityManager;
 import org.apache.shiro.realm.Realm;
@@ -37,15 +36,16 @@ import org.restlet.Restlet;
 import org.restlet.data.ChallengeResponse;
 import org.restlet.data.ChallengeScheme;
 import org.restlet.data.Method;
+import org.restlet.data.Status;
 import org.restlet.ext.json.JsonRepresentation;
 import org.restlet.representation.Representation;
-import org.simpleframework.http.Status;
 
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -170,7 +170,7 @@ public abstract class RestletTest {
         Request request = new Request(Method.GET, url);
         request.setChallengeResponse(currentUserCredentials);
         Response response = restlet.handle(request);
-        assertEquals(Status.OK.getCode(), response.getStatus().getCode());
+        assertEquals(Status.SUCCESS_OK.getCode(), response.getStatus().getCode());
         return convertResponseToJson(response);
     }
 
@@ -188,8 +188,17 @@ public abstract class RestletTest {
         Request request = new Request(Method.POST, url, representation);
         request.setChallengeResponse(currentUserCredentials);
         Response response = restlet.handle(request);
-        assertEquals(Status.OK.getCode(), response.getStatus().getCode());
+        assertEquals(Status.SUCCESS_OK.getCode(), response.getStatus().getCode());
         return convertResponseToJson(response);
+    }
+
+    protected Status postExpectFailure(String url, String body) {
+        Representation representation = new JsonRepresentation(body);
+        Request request = new Request(Method.POST, url, representation);
+        request.setChallengeResponse(currentUserCredentials);
+        Response response = restlet.handle(request);
+        assertNotEquals(Status.SUCCESS_OK.getCode(), response.getStatus().getCode());
+        return response.getStatus();
     }
 
     protected JsonNode convertResponseToJson(Response response) {
