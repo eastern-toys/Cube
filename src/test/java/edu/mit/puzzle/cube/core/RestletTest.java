@@ -11,7 +11,10 @@ import edu.mit.puzzle.cube.core.environments.ServiceEnvironment;
 import edu.mit.puzzle.cube.core.events.CompositeEventProcessor;
 import edu.mit.puzzle.cube.core.model.HuntStatusStore;
 import edu.mit.puzzle.cube.core.model.SubmissionStore;
+import edu.mit.puzzle.cube.core.model.Team;
+import edu.mit.puzzle.cube.core.model.User;
 import edu.mit.puzzle.cube.core.model.UserStore;
+import edu.mit.puzzle.cube.core.model.Visibility;
 import edu.mit.puzzle.cube.core.model.VisibilityStatusSet;
 import edu.mit.puzzle.cube.core.permissions.CubeRole;
 import edu.mit.puzzle.cube.core.serverresources.AbstractCubeResource;
@@ -162,6 +165,25 @@ public abstract class RestletTest {
         return realm;
     }
 
+    protected void addUser(ChallengeResponse userCredentials, List<String> roles) {
+        JsonNode json = post("/users", User.builder()
+                .setUsername(userCredentials.getIdentifier())
+                .setPassword(new String(userCredentials.getSecret()))
+                .setRoles(roles)
+                .build());
+        assertTrue(json.has("created"));
+        assertTrue(json.get("created").asBoolean());
+    }
+
+    protected void addTeam(ChallengeResponse teamCredentials) {
+        JsonNode json = post("/teams", Team.builder()
+                .setTeamId(teamCredentials.getIdentifier())
+                .setPassword(new String(teamCredentials.getSecret()))
+                .build());
+        assertTrue(json.has("created"));
+        assertTrue(json.get("created").asBoolean());
+    }
+
     protected void setCurrentUserCredentials(ChallengeResponse userCredentials) {
         currentUserCredentials = userCredentials;
     }
@@ -221,6 +243,19 @@ public abstract class RestletTest {
         JsonNode responseJson = get(String.format("/visibilities/%s/%s", teamId, puzzleId));
         assertTrue(responseJson.has("status"));
         assertTrue(responseJson.get("status").isTextual());
+        return responseJson;
+    }
+
+    protected JsonNode postVisibility(String teamId, String puzzleId, String status) {
+        JsonNode responseJson = post(
+                String.format("/visibilities/%s/%s", teamId, puzzleId),
+                Visibility.builder()
+                   .setTeamId(teamId)
+                   .setPuzzleId(puzzleId)
+                   .setStatus(status)
+                   .build());
+        assertTrue(responseJson.has("updated"));
+        assertTrue(responseJson.get("updated").asBoolean());
         return responseJson;
     }
 

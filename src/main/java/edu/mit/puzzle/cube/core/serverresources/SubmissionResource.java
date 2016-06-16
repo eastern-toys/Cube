@@ -64,9 +64,28 @@ public class SubmissionResource extends AbstractCubeResource {
         subject.checkPermission(
                 new SubmissionsPermission(existingSubmission.get().getTeamId(), PermissionAction.UPDATE));
 
+        if (existingSubmission.get().getStatus().isTerminal()) {
+            throw new ResourceException(
+                    Status.CLIENT_ERROR_BAD_REQUEST,
+                    "This submission has already been handled and may no longer be changed.");
+        }
+
+        String currentUsername = (String) subject.getPrincipal();
+
+        if (existingSubmission.get().getStatus().isAssigned()
+                && submission.getStatus().isAssigned()
+                && !existingSubmission.get().getCallerUsername().equals(currentUsername)) {
+            throw new ResourceException(
+                    Status.CLIENT_ERROR_BAD_REQUEST,
+                    String.format(
+                            "This submission is already claimed by %s. It must be unassigned " +
+                            "before you can change it.",
+                            existingSubmission.get().getCallerUsername()));
+        }
+
         String callerUsername = null;
         if (submission.getStatus().isAssigned()) {
-            callerUsername = (String) subject.getPrincipal();
+            callerUsername = currentUsername;
         }
 
         boolean changed = submissionStore.setSubmissionStatus(
