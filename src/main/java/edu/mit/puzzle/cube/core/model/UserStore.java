@@ -2,7 +2,6 @@ package edu.mit.puzzle.cube.core.model;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
 import com.google.common.collect.Table;
 
 import edu.mit.puzzle.cube.core.db.ConnectionFactory;
@@ -56,39 +55,11 @@ public class UserStore {
                 .build());
     }
 
-    private RolesAndInstanceLevelPermissions getRolesAndPermissions(User user) {
-        RolesAndInstanceLevelPermissions rolesAndPermissions = RolesAndInstanceLevelPermissions.NONE;
-        if (user.getTeamId() != null) {
-            rolesAndPermissions = RolesAndInstanceLevelPermissions.forSolvingTeam(user.getTeamId());
-        }
-        if (user.getRoles() != null) {
-            for (String roleName : user.getRoles()) {
-                RolesAndInstanceLevelPermissions newRolesAndPermissions = null;
-                switch (roleName) {
-                case "writingteam":
-                    newRolesAndPermissions =
-                            RolesAndInstanceLevelPermissions.forWritingTeam(user.getUsername());
-                    break;
-                case "admin":
-                    newRolesAndPermissions = RolesAndInstanceLevelPermissions.forAdmin();
-                    break;
-                default:
-                    throw new ResourceException(
-                            Status.CLIENT_ERROR_BAD_REQUEST,
-                            String.format("Unknown role '%s'", roleName));
-                }
-                if (newRolesAndPermissions != null) {
-                    rolesAndPermissions = rolesAndPermissions.merge(newRolesAndPermissions);
-                }
-            }
-        }
-        return rolesAndPermissions;
-    }
-
     public void addUser(User user) {
         String passwordSalt = generatePasswordSalt();
         Hash passwordHash = saltAndHashPassword(user.getPassword(), passwordSalt);
-        RolesAndInstanceLevelPermissions rolesAndPermissions = getRolesAndPermissions(user);
+        RolesAndInstanceLevelPermissions rolesAndPermissions =
+                RolesAndInstanceLevelPermissions.forUser(user);
 
         try (
                 Connection connection = connectionFactory.getConnection();
@@ -249,8 +220,8 @@ public class UserStore {
                             .setTeamId(existingTeamId)
                             .build();
                 }
-                RolesAndInstanceLevelPermissions rolesAndPermissions = getRolesAndPermissions(
-                        userForComputingPermissions);
+                RolesAndInstanceLevelPermissions rolesAndPermissions =
+                        RolesAndInstanceLevelPermissions.forUser(userForComputingPermissions);
 
                 deleteUserRolesStatement.setString(1, user.getUsername());
                 deleteUserRolesStatement.executeUpdate();

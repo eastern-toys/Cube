@@ -8,8 +8,9 @@ import java.util.List;
 @AutoValue
 public abstract class CubeRole {
 
+    public static final String WRITING_TEAM_ROLE_NAME = "writingteam";
     public static final CubeRole WRITING_TEAM = new AutoValue_CubeRole(
-            "writingteam",
+            WRITING_TEAM_ROLE_NAME,
             ImmutableList.of(
                     new UsersPermission("*", PermissionAction.READ),
                     new UserRolesPermission("*", PermissionAction.READ),
@@ -18,11 +19,16 @@ public abstract class CubeRole {
                     new VisibilitiesPermission("*", PermissionAction.READ)
             ));
 
+    public static final String ADMIN_ROLE_NAME = "admin";
     public static final CubeRole ADMIN = new AutoValue_CubeRole(
-            "admin",
+            ADMIN_ROLE_NAME,
             ImmutableList.of(
                     new AllPermission()
             ));
+
+    public static CubeRole create(String name) {
+        return new AutoValue_CubeRole(name, ImmutableList.<CubePermission>of());
+    }
 
     public abstract String getName();
     public abstract List<CubePermission> getPermissions();
