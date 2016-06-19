@@ -14,6 +14,7 @@ import org.junit.rules.ExpectedException;
 import org.restlet.resource.ResourceException;
 
 import java.sql.SQLException;
+import java.util.List;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -119,5 +120,46 @@ public class UserStoreTest {
 
         User readUser = userStore.getUser("testuser");
         assertThat(readUser.getRoles()).containsExactly("admin");
+    }
+
+    @Test
+    public void getAllUsers() {
+        User user = User.builder()
+                .setUsername("writinguser")
+                .setPassword("testpassword")
+                .setRoles(ImmutableList.of("writingteam"))
+                .build();
+        userStore.addUser(user);
+
+        user = User.builder()
+                .setUsername("adminuser")
+                .setPassword("testpassword")
+                .setRoles(ImmutableList.of("admin"))
+                .build();
+        userStore.addUser(user);
+
+        user = User.builder()
+                .setUsername(TEST_TEAM_ID)
+                .setPassword("testpassword")
+                .setTeamId(TEST_TEAM_ID)
+                .build();
+        userStore.addUser(user);
+
+        List<User> allUsers = userStore.getAllUsers();
+        assertThat(allUsers).containsExactly(
+                User.builder()
+                        .setUsername("writinguser")
+                        .setRoles(ImmutableList.of("writingteam"))
+                        .build(),
+                User.builder()
+                        .setUsername("adminuser")
+                        .setRoles(ImmutableList.of("admin"))
+                        .build(),
+                User.builder()
+                        .setUsername(TEST_TEAM_ID)
+                        .setTeamId(TEST_TEAM_ID)
+                        .setRoles(ImmutableList.<String>of())
+                        .build()
+        );
     }
 }

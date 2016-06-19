@@ -1,7 +1,9 @@
 package edu.mit.puzzle.cube.core.model;
 
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Multimap;
 import com.google.common.collect.Table;
 
 import edu.mit.puzzle.cube.core.db.ConnectionFactory;
@@ -133,6 +135,45 @@ public class UserStore {
                 .setTeamId((String) row.get("teamId"))
                 .setRoles(roles)
                 .build();
+    }
+
+    public List<User> getAllUsers() {
+        try (
+                Connection connection = connectionFactory.getConnection();
+                PreparedStatement selectUsersStatement = connection.prepareStatement(
+                        "SELECT * FROM users");
+                PreparedStatement selectUserRolesStatement = connection.prepareStatement(
+                        "SELECT * FROM user_roles")
+        ) {
+            ResultSet resultSet = selectUserRolesStatement.executeQuery();
+            // Map from username to that user's roles.
+            Multimap<String, String> userRolesMap = HashMultimap.create();
+            while (resultSet.next()) {
+                userRolesMap.put(resultSet.getString("username"), resultSet.getString("role_name"));
+            }
+
+            resultSet = selectUsersStatement.executeQuery();
+            ImmutableList.Builder<User> users = ImmutableList.builder();
+            while (resultSet.next()) {
+                User.Builder user = User.builder()
+                        .setUsername(resultSet.getString("username"));
+
+                String teamId = resultSet.getString("teamId");
+                if (teamId != null && !teamId.isEmpty()) {
+                    user.setTeamId(teamId);
+                }
+
+                user.setRoles(ImmutableList.copyOf(userRolesMap.get(resultSet.getString("username"))));
+
+                users.add(user.build());
+            }
+            return users.build();
+        } catch (SQLException e) {
+            throw new ResourceException(
+                    Status.SERVER_ERROR_INTERNAL.getCode(),
+                    e,
+                    "Failed to read users");
+        }
     }
 
     public boolean updateUser(User user) {
