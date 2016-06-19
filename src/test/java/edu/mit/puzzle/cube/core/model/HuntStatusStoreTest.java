@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Table;
 
 import edu.mit.puzzle.cube.core.AdjustableClock;
 import edu.mit.puzzle.cube.core.db.ConnectionFactory;
@@ -22,6 +21,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
@@ -71,10 +71,10 @@ public class HuntStatusStoreTest {
         assertTrue(statusChanged);
         assertEquals("UNLOCKED", huntStatusStore.getVisibility(TEST_TEAM_ID, TEST_PUZZLE_ID));
 
-        Table<Integer,String,Object> history = huntStatusStore.getVisibilityHistory(TEST_TEAM_ID, TEST_PUZZLE_ID);
-        assertEquals(1, history.rowKeySet().size());
-        assertEquals(clock.instant(), history.get(0, "timestamp"));
-        assertEquals("UNLOCKED", history.get(0, "status"));
+        List<VisibilityChange> history = huntStatusStore.getVisibilityHistory(TEST_TEAM_ID, TEST_PUZZLE_ID);
+        assertEquals(1, history.size());
+        assertEquals(clock.instant(), history.get(0).getTimestamp());
+        assertEquals("UNLOCKED", history.get(0).getStatus());
 
         verify(eventProcessor, times(1)).process(any(Event.class));
     }
@@ -88,10 +88,10 @@ public class HuntStatusStoreTest {
         assertFalse(statusChanged);
         assertEquals("UNLOCKED", huntStatusStore.getVisibility(TEST_TEAM_ID, TEST_PUZZLE_ID));
 
-        Table<Integer,String,Object> history = huntStatusStore.getVisibilityHistory(TEST_TEAM_ID, TEST_PUZZLE_ID);
-        assertEquals(1, history.rowKeySet().size());
-        assertEquals(clock.instant(), history.get(0, "timestamp"));
-        assertEquals("UNLOCKED", history.get(0, "status"));
+        List<VisibilityChange> history = huntStatusStore.getVisibilityHistory(TEST_TEAM_ID, TEST_PUZZLE_ID);
+        assertEquals(1, history.size());
+        assertEquals(clock.instant(), history.get(0).getTimestamp());
+        assertEquals("UNLOCKED", history.get(0).getStatus());
 
         verify(eventProcessor, times(1)).process(any(Event.class));
     }
@@ -104,8 +104,8 @@ public class HuntStatusStoreTest {
         assertEquals(visibilityStatusSet.getDefaultVisibilityStatus(),
                 huntStatusStore.getVisibility(TEST_TEAM_ID, TEST_PUZZLE_ID));
 
-        Table<Integer,String,Object> history = huntStatusStore.getVisibilityHistory(TEST_TEAM_ID, TEST_PUZZLE_ID);
-        assertEquals(0, history.rowKeySet().size());
+        List<VisibilityChange> history = huntStatusStore.getVisibilityHistory(TEST_TEAM_ID, TEST_PUZZLE_ID);
+        assertEquals(0, history.size());
 
         verifyZeroInteractions(eventProcessor);
     }
@@ -118,9 +118,9 @@ public class HuntStatusStoreTest {
         assertEquals(visibilityStatusSet.getDefaultVisibilityStatus(),
                 huntStatusStore.getVisibility(TEST_TEAM_ID, TEST_PUZZLE_ID));
 
-        Table<Integer,String,Object> history = huntStatusStore.getVisibilityHistory(
+        List<VisibilityChange> history = huntStatusStore.getVisibilityHistory(
                 TEST_TEAM_ID, TEST_PUZZLE_ID);
-        assertEquals(0, history.rowKeySet().size());
+        assertEquals(0, history.size());
 
         verifyZeroInteractions(eventProcessor);
     }
@@ -141,13 +141,13 @@ public class HuntStatusStoreTest {
         assertTrue(statusChanged);
         assertEquals("SOLVED", huntStatusStore.getVisibility(TEST_TEAM_ID, TEST_PUZZLE_ID));
 
-        Table<Integer,String,Object> history = huntStatusStore.getVisibilityHistory(TEST_TEAM_ID, TEST_PUZZLE_ID);
-        assertEquals(2, history.rowKeySet().size());
+        List<VisibilityChange> history = huntStatusStore.getVisibilityHistory(TEST_TEAM_ID, TEST_PUZZLE_ID);
+        assertEquals(2, history.size());
 
-        assertEquals(firstTimestamp, history.get(0, "timestamp"));
-        assertEquals("UNLOCKED", history.get(0, "status"));
-        assertEquals(secondTimestamp, history.get(1, "timestamp"));
-        assertEquals("SOLVED", history.get(1, "status"));
+        assertEquals(firstTimestamp, history.get(0).getTimestamp());
+        assertEquals("UNLOCKED", history.get(0).getStatus());
+        assertEquals(secondTimestamp, history.get(1).getTimestamp());
+        assertEquals("SOLVED", history.get(1).getStatus());
 
         verify(eventProcessor, times(2)).process(any(Event.class));
     }
