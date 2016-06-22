@@ -2,7 +2,6 @@ package edu.mit.puzzle.cube.core.model;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
-import com.google.common.collect.Table;
 
 import edu.mit.puzzle.cube.core.db.ConnectionFactory;
 import edu.mit.puzzle.cube.core.db.DatabaseHelper;
@@ -13,13 +12,10 @@ import edu.mit.puzzle.cube.core.events.SubmissionCompleteEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.sql.Timestamp;
 import java.time.Clock;
-import java.time.Instant;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
@@ -28,7 +24,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class SubmissionStore {
 
     private static Logger LOGGER = LoggerFactory.getLogger(SubmissionStore.class);
-    private static DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSX");
 
     private final ConnectionFactory connectionFactory;
     private final Clock clock;
@@ -60,52 +55,36 @@ public class SubmissionStore {
                         submission.getPuzzleId(),
                         submission.getTeamId(),
                         submission.getSubmission(),
-                        clock.instant())
+                        Timestamp.from(clock.instant()))
         ).isPresent();
     }
 
-    private static Submission generateSubmissionObject(Map<String,Object> rowMap) {
-        return Submission.builder()
-                .setSubmissionId((int) rowMap.get("submissionId"))
-                .setTeamId((String) rowMap.get("teamId"))
-                .setPuzzleId((String) rowMap.get("puzzleId"))
-                .setSubmission((String) rowMap.get("submission"))
-                .setStatus(SubmissionStatus.valueOf((String) rowMap.get("status")))
-                .setCallerUsername((String) rowMap.get("callerUsername"))
-                .setTimestamp((Instant) rowMap.get("timestamp"))
-                .build();
-    }
-
     public List<Submission> getAllSubmissions() {
-        Table<Integer, String, Object> resultTable = DatabaseHelper.query(
+        List<Submission> submissions = DatabaseHelper.query(
                 connectionFactory,
                 "SELECT * FROM submissions",
                 Lists.newArrayList(),
-                "submissionId"
+                Submission.class
         );
-
-        List<Submission> submissions = resultTable.rowMap().values().stream()
-                .map(SubmissionStore::generateSubmissionObject)
-                .collect(Collectors.toList());
 
         return Ordering.natural().onResultOf(Submission::getSubmissionId).immutableSortedCopy(submissions);
     }
 
     public Optional<Submission> getSubmission(int submissionId) {
-        Table<Integer, String, Object> resultTable = DatabaseHelper.query(
+        List<Submission> submissions = DatabaseHelper.query(
                 connectionFactory,
                 "SELECT * FROM submissions WHERE submissionId = ?",
                 Lists.newArrayList(submissionId),
-                "submissionId"
+                Submission.class
         );
 
-        if (resultTable.rowKeySet().size() == 0) {
+        if (submissions.size() == 0) {
             return Optional.empty();
-        } else if (resultTable.rowKeySet().size() > 1) {
+        } else if (submissions.size() > 1) {
             throw new RuntimeException("Primary key violation in application layer");
         }
 
-        return Optional.of(generateSubmissionObject(resultTable.row(submissionId)));
+        return Optional.of(submissions.get(0));
     }
 
     public boolean setSubmissionStatus(

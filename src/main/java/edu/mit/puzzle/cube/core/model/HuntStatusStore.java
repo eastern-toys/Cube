@@ -25,8 +25,8 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.time.Clock;
-import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -132,7 +132,7 @@ public class HuntStatusStore {
         Integer updates = DatabaseHelper.update(
                 connectionFactory,
                 "UPDATE run SET startTimestamp = ? WHERE startTimestamp IS NULL",
-                Lists.newArrayList(clock.instant())
+                Lists.newArrayList(Timestamp.from(clock.instant()))
         );
         return updates > 0;
     }
@@ -298,7 +298,7 @@ public class HuntStatusStore {
             DatabaseHelper.update(
                     connectionFactory,
                     "INSERT INTO visibility_history (teamId, puzzleId, status, timestamp) VALUES (?, ?, ?, ?)",
-                    Lists.newArrayList(teamId, puzzleId, status, clock.instant()));
+                    Lists.newArrayList(teamId, puzzleId, status, Timestamp.from(clock.instant())));
 
             VisibilityChangeEvent changeEvent = VisibilityChangeEvent.builder()
                     .setVisibility(Visibility.builder()
@@ -316,31 +316,24 @@ public class HuntStatusStore {
 
     }
 
-    public Table<Integer,String,Object> getVisibilityHistory(String teamId, String puzzleId) {
+    public List<VisibilityChange> getVisibilityHistory(String teamId, String puzzleId) {
         return DatabaseHelper.query(
                 connectionFactory,
-                "SELECT status, timestamp FROM visibility_history WHERE " +
+                "SELECT * FROM visibility_history WHERE " +
                         "teamId = ? AND puzzleId = ? ORDER BY timestamp ASC",
-                Lists.newArrayList(teamId, puzzleId)
+                Lists.newArrayList(teamId, puzzleId),
+                VisibilityChange.class
         );
     }
 
     // TODO: introduce some filtering and/or pagination on this API - always reading all
     // visibility changes may not scale.
     public List<VisibilityChange> getVisibilityChanges() {
-        Table<Integer,String,Object> resultTable = DatabaseHelper.query(
+        return DatabaseHelper.query(
                 connectionFactory,
-                "SELECT teamId, puzzleId, status, timestamp FROM visibility_history",
-                ImmutableList.<Object>of());
-        ImmutableList.Builder<VisibilityChange> visibilityChanges = ImmutableList.builder();
-        for (Map<String,Object> rowMap : resultTable.rowMap().values()) {
-            visibilityChanges.add(VisibilityChange.builder()
-                    .setTeamId((String) rowMap.get("teamId"))
-                    .setPuzzleId((String) rowMap.get("puzzleId"))
-                    .setStatus((String) rowMap.get("status"))
-                    .setTimestamp((Instant) rowMap.get("timestamp"))
-                    .build());
-        }
-        return visibilityChanges.build();
+                "SELECT * FROM visibility_history",
+                ImmutableList.<Object>of(),
+                VisibilityChange.class
+        );
     }
 }

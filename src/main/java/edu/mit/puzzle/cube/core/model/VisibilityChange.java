@@ -7,6 +7,8 @@ import com.google.auto.value.AutoValue;
 
 import java.time.Instant;
 
+import javax.annotation.Nullable;
+
 @AutoValue
 @JsonDeserialize(builder = AutoValue_VisibilityChange.Builder.class)
 public abstract class VisibilityChange {
@@ -19,6 +21,10 @@ public abstract class VisibilityChange {
         @JsonProperty("timestamp")
         @JsonDeserialize(using=InstantDeserializer.class)
         public abstract Builder setTimestamp(Instant timestamp);
+
+        @Nullable
+        @JsonProperty("visibilityHistoryId")
+        public abstract Builder setVisibilityHistoryId(Integer visibilityHistoryId);
 
         public abstract VisibilityChange build();
     }
@@ -34,4 +40,8 @@ public abstract class VisibilityChange {
     @JsonProperty("timestamp")
     @JsonSerialize(using=InstantSerializer.class)
     public abstract Instant getTimestamp();
+
+    @Nullable
+    @JsonProperty("visibilityHistoryId")
+    public abstract Integer getVisibilityHistoryId();
 }

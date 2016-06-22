@@ -1,14 +1,19 @@
 package edu.mit.puzzle.cube.core.db;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Joiner;
-import com.google.common.collect.*;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableTable;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Table;
 
-import java.sql.*;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Types;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -28,8 +33,7 @@ import java.util.stream.IntStream;
  * it's not, please reconsider the size/complexity of what you're doing.)
  */
 public class DatabaseHelper {
-
-    public static DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSX");
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     /**
      * Queries a database (connected to by a Connection from ConnectionFactory) with the given
@@ -132,12 +136,51 @@ public class DatabaseHelper {
                 }
             }
 
-            return internallyCastTimestamps(tableBuilder.build());
+            return tableBuilder.build();
 
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
 
+    }
+
+    public static <MODEL_TYPE> List<MODEL_TYPE> query(
+            ConnectionFactory connectionFactory,
+            String preparedQuery,
+            List<Object> parameters,
+            Class<MODEL_TYPE> resultClass
+    ) {
+        try (
+                Connection connection = connectionFactory.getConnection();
+                PreparedStatement statement = connection.prepareStatement(preparedQuery)
+        ) {
+            for (int i = 0; i < parameters.size(); ++i) {
+                statement.setObject(i + 1, parameters.get(i));
+            }
+            ResultSet rs = statement.executeQuery();
+
+            ImmutableList.Builder<MODEL_TYPE> results = ImmutableList.builder();
+            while (rs.next()) {
+                ObjectNode objectNode = OBJECT_MAPPER.createObjectNode();
+                for (int i = 1; i <= rs.getMetaData().getColumnCount(); i++) {
+                    Object value;
+                    switch (rs.getMetaData().getColumnType(i)) {
+                    case Types.TIMESTAMP:
+                        value = rs.getTimestamp(i).toInstant();
+                        break;
+                    default:
+                        value = rs.getObject(i);
+                        break;
+                    }
+                    objectNode.putPOJO(rs.getMetaData().getColumnName(i), value);
+                }
+                results.add(OBJECT_MAPPER.convertValue(objectNode, resultClass));
+            }
+
+            return results.build();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static List<Integer> updateBatch(
@@ -238,20 +281,4 @@ public class DatabaseHelper {
             throw new RuntimeException(e);
         }
     }
-
-    private static <ROW_KEY_TYPE,COL_KEY_TYPE> Table<ROW_KEY_TYPE,COL_KEY_TYPE,Object> internallyCastTimestamps(
-            Table<ROW_KEY_TYPE,COL_KEY_TYPE,Object> table
-    ) {
-        return Tables.transformValues(table, (Object o) -> {
-            try {
-                String s = (String) o;
-                Instant timestamp = LocalDateTime.parse(s, DATE_TIME_FORMATTER)
-                        .atZone(ZoneId.of("UTC")).toInstant();
-                return timestamp;
-            } catch (ClassCastException | DateTimeParseException e) {
-                return o;
-            }
-        });
-    }
-
 }
