@@ -62,6 +62,8 @@ public abstract class Team {
         return new AutoValue_Team.Builder();
     }
 
+    public abstract Builder toBuilder();
+
     @SuppressWarnings("unchecked")
     public <T extends Property> T getTeamProperty(Class<T> propertyClass) {
         if (getTeamProperties() == null) {

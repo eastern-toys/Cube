@@ -3,6 +3,7 @@ package edu.mit.puzzle.cube.core.model;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Table;
 
@@ -27,7 +28,6 @@ import java.sql.Types;
 import java.util.Base64;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -106,19 +106,21 @@ public class UserStore {
     }
 
     public User getUser(String username) {
-        Table<Integer,String,Object> resultTable = DatabaseHelper.query(
+        List<User> users = DatabaseHelper.query(
                 connectionFactory,
-                "SELECT * FROM users WHERE username = ?",
-                ImmutableList.of(username)
+                "SELECT username, teamId FROM users WHERE username = ?",
+                ImmutableList.of(username),
+                User.class
         );
 
-        if (resultTable.rowKeySet().size() == 0) {
+        if (users.size() == 0) {
             throw new ResourceException(
                     Status.CLIENT_ERROR_NOT_FOUND,
                     String.format("The username '%s' does not exist", username));
-        } else if (resultTable.rowKeySet().size() > 1) {
+        } else if (users.size() > 1) {
             throw new RuntimeException("Primary key violation in application layer");
         }
+        User user = Iterables.getOnlyElement(users);
 
         Table<Integer,String,Object> rolesResultTable = DatabaseHelper.query(
                 connectionFactory,
@@ -129,10 +131,7 @@ public class UserStore {
                 .map(o -> (String) o)
                 .collect(Collectors.toList());
 
-        Map<String, Object> row = resultTable.row(0);
-        return User.builder()
-                .setUsername((String) row.get("username"))
-                .setTeamId((String) row.get("teamId"))
+        return user.toBuilder()
                 .setRoles(roles)
                 .build();
     }

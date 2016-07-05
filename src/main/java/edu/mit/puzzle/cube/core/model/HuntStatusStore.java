@@ -90,21 +90,7 @@ public class HuntStatusStore {
             parameters.add(puzzleId.get());
         }
 
-        Table<Integer,String,Object> resultTable = DatabaseHelper.query(
-                connectionFactory,
-                query,
-                parameters
-        );
-
-        return resultTable.rowMap().values().stream()
-                .map(rowMap ->
-                    Visibility.builder()
-                            .setTeamId((String) rowMap.get("teamId"))
-                            .setPuzzleId((String) rowMap.get("puzzleId"))
-                            .setStatus((String) rowMap.get("status"))
-                            .build()
-                )
-                .collect(Collectors.toList());
+        return DatabaseHelper.query(connectionFactory, query, parameters, Visibility.class);
     }
 
     public Map<String,String> getVisibilitiesForTeam(String teamId) {
@@ -152,13 +138,14 @@ public class HuntStatusStore {
     }
 
     public Set<String> getTeamIds() {
-        Table<Integer, String, Object> resultTable = DatabaseHelper.query(
+        List<Team> teams = DatabaseHelper.query(
                 connectionFactory,
                 "SELECT teamId FROM teams",
-                Lists.newArrayList()
+                Lists.newArrayList(),
+                Team.class
         );
 
-        return resultTable.values().stream().map(o -> (String) o).collect(Collectors.toSet());
+        return teams.stream().map(Team::getTeamId).collect(Collectors.toSet());
     }
 
     public Team getTeam(String teamId) {
@@ -182,8 +169,15 @@ public class HuntStatusStore {
             }
         }
 
-        return Team.builder()
-                .setTeamId(teamId)
+        List<Team> teams = DatabaseHelper.query(
+                connectionFactory,
+                "SELECT teamId FROM teams WHERE teamId = ?",
+                Lists.newArrayList(teamId),
+                Team.class
+        );
+        Team team = Iterables.getOnlyElement(teams);
+
+        return team.toBuilder()
                 .setTeamProperties(teamProperties.build())
                 .build();
     }
