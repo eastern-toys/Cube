@@ -93,25 +93,22 @@ public class HuntStatusStore {
         return DatabaseHelper.query(connectionFactory, query, parameters, Visibility.class);
     }
 
-    public Map<String,String> getVisibilitiesForTeam(String teamId) {
-        Table<Integer, String, Object> resultTable = DatabaseHelper.query(
+    public List<Visibility> getVisibilitiesForTeam(String teamId) {
+        return DatabaseHelper.query(
                 connectionFactory,
-                "SELECT puzzles.puzzleId AS puzzleId, visibilities.status AS status FROM puzzles " +
-                        "LEFT JOIN visibilities ON " +
-                            "puzzles.puzzleId = visibilities.puzzleId " +
-                            "AND visibilities.teamId = ?",
-                Lists.newArrayList(teamId)
+                "SELECT " +
+                "  ? AS teamId, " +
+                "  puzzles.puzzleId AS puzzleId, " +
+                "  CASE WHEN visibilities.status IS NOT NULL " +
+                "    THEN visibilities.status " +
+                "    ELSE ? " +
+                "  END AS status " +
+                "FROM puzzles " +
+                "LEFT JOIN visibilities ON " +
+                "  puzzles.puzzleId = visibilities.puzzleId AND visibilities.teamId = ?",
+                Lists.newArrayList(teamId, visibilityStatusSet.getDefaultVisibilityStatus(), teamId),
+                Visibility.class
         );
-
-        ImmutableMap.Builder<String,String> mapBuilder = ImmutableMap.builder();
-        for (Map<String,Object> rowMap : resultTable.rowMap().values()) {
-            String puzzleId = (String) rowMap.get("puzzleId");
-            String status = Optional.ofNullable((String) rowMap.get("status"))
-                    .orElse(visibilityStatusSet.getDefaultVisibilityStatus());
-            mapBuilder.put(puzzleId, status);
-        }
-
-        return mapBuilder.build();
     }
 
     public boolean recordHuntRunStart() {

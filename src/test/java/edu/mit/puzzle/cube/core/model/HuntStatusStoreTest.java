@@ -22,8 +22,8 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
-import java.util.Map;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -161,11 +161,14 @@ public class HuntStatusStoreTest {
         huntStatusStore.setVisibility(
                 TEST_TEAM_ID, TEST_PUZZLE_ID_2, "UNLOCKED", false);
 
-        Map<String,String> visibilities = huntStatusStore.getVisibilitiesForTeam(TEST_TEAM_ID);
-        assertEquals(3, visibilities.size());
-        assertEquals("SOLVED", visibilities.get(TEST_PUZZLE_ID));
-        assertEquals("UNLOCKED", visibilities.get(TEST_PUZZLE_ID_2));
-        assertEquals(visibilityStatusSet.getDefaultVisibilityStatus(), visibilities.get(TEST_PUZZLE_ID_3));
+        List<Visibility> visibilities = huntStatusStore.getVisibilitiesForTeam(TEST_TEAM_ID);
+        Visibility.Builder visibilityBuilder = Visibility.builder()
+                .setTeamId(TEST_TEAM_ID);
+        assertThat(visibilities).containsExactly(
+                visibilityBuilder.setPuzzleId(TEST_PUZZLE_ID).setStatus("SOLVED").build(),
+                visibilityBuilder.setPuzzleId(TEST_PUZZLE_ID_2).setStatus("UNLOCKED").build(),
+                visibilityBuilder.setPuzzleId(TEST_PUZZLE_ID_3).setStatus(visibilityStatusSet.getDefaultVisibilityStatus()).build()
+        );
     }
 
     @AutoValue

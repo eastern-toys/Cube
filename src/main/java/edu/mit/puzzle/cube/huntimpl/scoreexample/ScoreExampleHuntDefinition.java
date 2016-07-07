@@ -19,6 +19,7 @@ import edu.mit.puzzle.cube.core.model.HuntStatusStore;
 import edu.mit.puzzle.cube.core.model.Submission;
 import edu.mit.puzzle.cube.core.model.SubmissionStatus;
 import edu.mit.puzzle.cube.core.model.Team;
+import edu.mit.puzzle.cube.core.model.Visibility;
 import edu.mit.puzzle.cube.core.model.VisibilityStatusSet;
 import edu.mit.puzzle.cube.modules.model.StandardVisibilityStatusSet;
 
@@ -164,10 +165,10 @@ public class ScoreExampleHuntDefinition implements HuntDefinition {
         int seconds = (int) Duration.between(start.get(), Instant.now()).getSeconds();
         int timeScore = seconds / 60; //1 point every minute
 
-        Map<String, String> visibilities = huntStatusStore.getVisibilitiesForTeam(teamId);
-        int puzzleScore = visibilities.entrySet().stream()
-                .filter(entry -> entry.getValue().equals("SOLVED"))
-                .map(entry -> entry.getKey())
+        List<Visibility> visibilities = huntStatusStore.getVisibilitiesForTeam(teamId);
+        int puzzleScore = visibilities.stream()
+                .filter(visibility -> visibility.getStatus().equals("SOLVED"))
+                .map(Visibility::getPuzzleId)
                 .mapToInt(puzzleKey -> PUZZLE_INFO_MAP.get(puzzleKey).pointReward)
                 .sum();
 
