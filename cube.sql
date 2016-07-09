@@ -1,5 +1,5 @@
 CREATE TABLE run (
-       startTimestamp DATETIME DEFAULT NULL
+       startTimestamp TIMESTAMP DEFAULT NULL
 );
 INSERT INTO run (startTimestamp) VALUES (NULL);
 
@@ -84,7 +84,7 @@ CREATE TABLE submissions (
        teamId VARCHAR(20),
        puzzleId VARCHAR(40),
        submission TEXT,
-       timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+       timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
        status VARCHAR(10) DEFAULT 'SUBMITTED',
        callerUsername VARCHAR(40),
        PRIMARY KEY(submissionId),
@@ -107,7 +107,7 @@ CREATE TABLE visibility_history (
        teamId VARCHAR(20),
        puzzleId VARCHAR(40),
        status VARCHAR(10) DEFAULT 'INVISIBLE',
-       timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+       timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
        PRIMARY KEY(visibilityHistoryId),
        FOREIGN KEY(teamId) REFERENCES teams(teamId),
        FOREIGN KEY(puzzleId) REFERENCES puzzles(puzzleId)       
