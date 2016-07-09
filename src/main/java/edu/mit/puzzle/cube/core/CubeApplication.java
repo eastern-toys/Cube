@@ -1,12 +1,15 @@
 package edu.mit.puzzle.cube.core;
 
-import com.google.common.collect.ImmutableSet;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.util.concurrent.AbstractScheduledService;
 import com.google.common.util.concurrent.Service;
 
 import edu.mit.puzzle.cube.core.db.ConnectionFactory;
 import edu.mit.puzzle.cube.core.db.CubeJdbcRealm;
 import edu.mit.puzzle.cube.core.environments.DevelopmentEnvironment;
+import edu.mit.puzzle.cube.core.environments.ProductionEnvironment;
 import edu.mit.puzzle.cube.core.environments.ServiceEnvironment;
 import edu.mit.puzzle.cube.core.events.CompositeEventProcessor;
 import edu.mit.puzzle.cube.core.events.PeriodicTimerEvent;
@@ -14,7 +17,6 @@ import edu.mit.puzzle.cube.core.model.HuntStatusStore;
 import edu.mit.puzzle.cube.core.model.SubmissionStore;
 import edu.mit.puzzle.cube.core.model.UserStore;
 import edu.mit.puzzle.cube.core.serverresources.AbstractCubeResource;
-import edu.mit.puzzle.cube.huntimpl.linearexample.LinearExampleHuntDefinition;
 
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.mgt.DefaultSecurityManager;
@@ -24,11 +26,16 @@ import org.restlet.Component;
 import org.restlet.Restlet;
 import org.restlet.data.Protocol;
 import org.restlet.service.CorsService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.concurrent.TimeUnit;
 
 public class CubeApplication extends Application {
+    private static Logger LOGGER = LoggerFactory.getLogger(CubeApplication.class);
 
     private final SubmissionStore submissionStore;
     private final HuntStatusStore huntStatusStore;
@@ -37,17 +44,41 @@ public class CubeApplication extends Application {
 
     private final Service timingEventService;
 
-    public CubeApplication() throws SQLException {
+    public CubeApplication(CubeConfig config) throws SQLException {
         CorsService corsService = new CorsService();
-        corsService.setAllowedOrigins(ImmutableSet.of("*", "http://localhost:8081"));
+        corsService.setAllowedOrigins(config.getCorsAllowedOrigins());
         corsService.setAllowedCredentials(true);
         corsService.setAllowingAllRequestedHeaders(true);
         getServices().add(corsService);
 
         setStatusService(new CubeStatusService(corsService));
 
-        HuntDefinition huntDefinition = new LinearExampleHuntDefinition();
-        ServiceEnvironment serviceEnvironment = new DevelopmentEnvironment(huntDefinition);
+        HuntDefinition huntDefinition = null;
+        try {
+            @SuppressWarnings("unchecked")
+            Class<HuntDefinition> huntDefinitionClass = (Class<HuntDefinition>) Class.forName(config.getHuntDefinitionClassName());
+            huntDefinition = huntDefinitionClass.newInstance();
+            LOGGER.info("Using hunt definition {}", config.getHuntDefinitionClassName());
+        } catch (ClassNotFoundException e) {
+            LOGGER.error("Hunt definition class not found", e);
+            System.exit(1);
+        } catch (InstantiationException | IllegalAccessException e) {
+            LOGGER.error("Failed to instantiate hunt definition", e);
+            System.exit(1);
+        }
+
+        ServiceEnvironment serviceEnvironment = null;
+        switch (config.getServiceEnvironment()) {
+        case DEVELOPMENT:
+            serviceEnvironment = new DevelopmentEnvironment(huntDefinition);
+            break;
+        case PRODUCTION:
+            serviceEnvironment = new ProductionEnvironment(config);
+            break;
+        default:
+            LOGGER.error("Unimplemented service environment: " + config.getServiceEnvironment());
+            System.exit(1);
+        }
 
         ConnectionFactory connectionFactory = serviceEnvironment.getConnectionFactory();
 
@@ -75,7 +106,11 @@ public class CubeApplication extends Application {
         timingEventService = new AbstractScheduledService() {
             @Override
             protected void runOneIteration() throws Exception {
-                eventProcessor.process(PeriodicTimerEvent.builder().build());
+                try {
+                    eventProcessor.process(PeriodicTimerEvent.builder().build());
+                } catch (Exception e) {
+                    LOGGER.error("Failure while processing periodic timer event", e);
+                }
             }
 
             @Override
@@ -106,14 +141,25 @@ public class CubeApplication extends Application {
     }
 
     public static void main (String[] args) throws Exception {
+        CubeConfig config;
+        try {
+            config = new ObjectMapper().readValue(new File("config.json"), CubeConfig.class);
+        } catch (JsonParseException | JsonMappingException e) {
+            System.err.println("Failed to load config file: " + e);
+            System.exit(1);
+            return;
+        } catch (IOException e) {
+            config = CubeConfig.builder().build();
+        }
+
         // Create a new Component.
         Component component = new Component();
 
-        // Add a new HTTP server listening on port 8182.
-        component.getServers().add(Protocol.HTTP, 8182);
+        // Add a new HTTP server.
+        component.getServers().add(Protocol.HTTP, config.getPort());
 
         // Attach this application.
-        component.getDefaultHost().attach("", new CubeApplication());
+        component.getDefaultHost().attach("", new CubeApplication(config));
 
         // Start the component.
         component.start();
