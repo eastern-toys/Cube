@@ -120,17 +120,18 @@ public class HuntStatusStore {
         return updates > 0;
     }
 
-    public Map<String,Object> getHuntRunProperties() {
-        Table<Integer, String, Object> resultTable = DatabaseHelper.query(
+    public Optional<Run> getHuntRunProperties() {
+        List<Run> runs = DatabaseHelper.query(
                 connectionFactory,
                 "SELECT * FROM run",
-                Lists.newArrayList()
+                Lists.newArrayList(),
+                Run.class
         );
 
-        if (resultTable.rowKeySet().size() == 1) {
-            return resultTable.row(0);
+        if (runs.size() == 1) {
+            return Optional.of(runs.get(0));
         } else {
-            return ImmutableMap.of();
+            return Optional.empty();
         }
     }
 

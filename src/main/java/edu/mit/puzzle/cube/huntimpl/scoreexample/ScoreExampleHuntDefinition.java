@@ -16,6 +16,7 @@ import edu.mit.puzzle.cube.core.events.PeriodicTimerEvent;
 import edu.mit.puzzle.cube.core.events.SubmissionCompleteEvent;
 import edu.mit.puzzle.cube.core.events.VisibilityChangeEvent;
 import edu.mit.puzzle.cube.core.model.HuntStatusStore;
+import edu.mit.puzzle.cube.core.model.Run;
 import edu.mit.puzzle.cube.core.model.Submission;
 import edu.mit.puzzle.cube.core.model.SubmissionStatus;
 import edu.mit.puzzle.cube.core.model.Team;
@@ -112,6 +113,10 @@ public class ScoreExampleHuntDefinition implements HuntDefinition {
                             teamId,
                             ScoreProperty.class,
                             ScoreProperty.create(0));
+                    eventProcessor.process(ScoreUpdateEvent.builder()
+                            .setTeamId(teamId)
+                            .setScore(0)
+                            .build());
                 }
             }
         });
@@ -156,13 +161,14 @@ public class ScoreExampleHuntDefinition implements HuntDefinition {
             String teamId,
             HuntStatusStore huntStatusStore
     ) {
-        Optional<Instant> start = Optional.ofNullable(
-                (Instant) huntStatusStore.getHuntRunProperties().get("startTimestamp"));
-        if (!start.isPresent() || Instant.now().isBefore(start.get())) {
+        Optional<Run> run = huntStatusStore.getHuntRunProperties();
+        if (!run.isPresent()
+                || run.get().getStartTimestamp() == null
+                || Instant.now().isBefore(run.get().getStartTimestamp())) {
             return Optional.empty();
         }
 
-        int seconds = (int) Duration.between(start.get(), Instant.now()).getSeconds();
+        int seconds = (int) Duration.between(run.get().getStartTimestamp(), Instant.now()).getSeconds();
         int timeScore = seconds / 60; //1 point every minute
 
         List<Visibility> visibilities = huntStatusStore.getVisibilitiesForTeam(teamId);
