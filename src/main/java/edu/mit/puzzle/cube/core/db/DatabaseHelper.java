@@ -1,5 +1,6 @@
 package edu.mit.puzzle.cube.core.db;
 
+import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Joiner;
@@ -14,6 +15,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
+import java.time.Instant;
+import java.time.temporal.ChronoField;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -33,7 +36,8 @@ import java.util.stream.IntStream;
  * it's not, please reconsider the size/complexity of what you're doing.)
  */
 public class DatabaseHelper {
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
+            .configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
 
     /**
      * Queries a database (connected to by a Connection from ConnectionFactory) with the given
@@ -166,7 +170,9 @@ public class DatabaseHelper {
                     Object value;
                     switch (rs.getMetaData().getColumnType(i)) {
                     case Types.TIMESTAMP:
-                        value = rs.getTimestamp(i).toInstant();
+                        Instant instant = rs.getTimestamp(i).toInstant();
+                        value = instant.getLong(ChronoField.INSTANT_SECONDS) * 1000
+                                + instant.getLong(ChronoField.MILLI_OF_SECOND);
                         break;
                     default:
                         value = rs.getObject(i);
@@ -249,7 +255,9 @@ public class DatabaseHelper {
             ResultSet rs = statement.getGeneratedKeys();
             Optional<Integer> insertedId = Optional.empty();
             while (rs.next()) {
-                insertedId = Optional.of(rs.getInt(1));
+                if (rs.getMetaData().getColumnType(1) == Types.INTEGER) {
+                    insertedId = Optional.of(rs.getInt(1));
+                }
             }
             return insertedId;
 

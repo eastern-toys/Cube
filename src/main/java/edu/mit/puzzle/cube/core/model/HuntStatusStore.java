@@ -198,8 +198,9 @@ public class HuntStatusStore {
 
         Optional<Integer> generatedId = DatabaseHelper.insert(
                 connectionFactory,
-                "INSERT OR IGNORE INTO team_properties (teamId, propertyKey, propertyValue) VALUES (?,?,?)",
-                Lists.newArrayList(teamId, propertyKey, propertyValue));
+                "INSERT INTO team_properties (teamId, propertyKey, propertyValue) SELECT ?, ?, ? " +
+                "WHERE NOT EXISTS (SELECT 1 FROM team_properties WHERE teamId = ? AND propertyKey = ?)",
+                Lists.newArrayList(teamId, propertyKey, propertyValue, teamId, propertyKey));
         if (generatedId.isPresent()) {
             return true;
         }
@@ -247,8 +248,9 @@ public class HuntStatusStore {
     private boolean createExplicitDefaultVisibility(String teamId, String puzzleId) {
         Optional<Integer> generatedId = DatabaseHelper.insert(
                 connectionFactory,
-                "INSERT OR IGNORE INTO visibilities (teamId, puzzleId) VALUES (?, ?)",
-                Lists.newArrayList(teamId, puzzleId));
+                "INSERT INTO visibilities (teamId, puzzleId) SELECT ?, ? " +
+                "WHERE NOT EXISTS (SELECT 1 FROM visibilities WHERE teamId = ? AND puzzleId = ?)",
+                Lists.newArrayList(teamId, puzzleId, teamId, puzzleId));
         return generatedId.isPresent();
     }
 

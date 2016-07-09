@@ -93,7 +93,7 @@ public class SubmissionStore {
                 connectionFactory,
                 "UPDATE submissions SET status = ?, callerUsername = ? " +
                 "WHERE submissionId = ? AND (status <> ? OR callerUsername <> ?)",
-                Lists.newArrayList(status, callerUsername, submissionId, status, callerUsername)
+                Lists.newArrayList(status.toString(), callerUsername, submissionId, status.toString(), callerUsername)
         ) > 0;
 
         if (updated && status.isTerminal()) {
