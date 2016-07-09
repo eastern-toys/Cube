@@ -62,8 +62,7 @@ public class CubeStatusService extends StatusService {
 
     @Override
     public Status toStatus(Throwable throwable, Resource resource) {
-        corsResponseHelper.addCorsResponseHeaders(resource.getRequest(), resource.getResponse());
-        return toStatus(throwable);
+        return toStatus(throwable, resource.getRequest(), resource.getResponse());
     }
 
     @Override
