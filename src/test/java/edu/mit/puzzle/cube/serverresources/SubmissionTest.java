@@ -75,13 +75,13 @@ public class SubmissionTest extends RestletTest {
         postUpdateSubmission(1, SubmissionStatus.ASSIGNED.name());
 
         setCurrentUserCredentials(USER_TWO);
-        postExpectFailure("/submissions/1", "{\"status\":\"ASSIGNED\"");
+        postExpectFailure("/submissions/1", "{\"status\":\"ASSIGNED\"}");
 
         postUpdateSubmission(1, SubmissionStatus.SUBMITTED.name());
         postUpdateSubmission(1, SubmissionStatus.ASSIGNED.name());
 
         setCurrentUserCredentials(USER_ONE);
-        postExpectFailure("/submissions/1", "{\"status\":\"ASSIGNED\"");
+        postExpectFailure("/submissions/1", "{\"status\":\"ASSIGNED\"}");
     }
 
     @Test
@@ -92,9 +92,9 @@ public class SubmissionTest extends RestletTest {
         setCurrentUserCredentials(USER_ONE);
         postUpdateSubmission(1, SubmissionStatus.ASSIGNED.name());
         postUpdateSubmission(1, SubmissionStatus.CORRECT.name());
-        postExpectFailure("/submissions/1", "{\"status\":\"ASSIGNED\"");
+        postExpectFailure("/submissions/1", "{\"status\":\"ASSIGNED\"}");
 
         setCurrentUserCredentials(USER_TWO);
-        postExpectFailure("/submissions/1", "{\"status\":\"ASSIGNED\"");
+        postExpectFailure("/submissions/1", "{\"status\":\"ASSIGNED\"}");
     }
 }
