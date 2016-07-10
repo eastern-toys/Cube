@@ -80,7 +80,7 @@ INSERT INTO puzzles (puzzleId) VALUES
 ;
 
 CREATE TABLE submissions (
-       submissionId INTEGER,
+       submissionId ${auto_increment_type},
        teamId VARCHAR(20),
        puzzleId VARCHAR(40),
        submission TEXT,
@@ -103,7 +103,7 @@ CREATE TABLE visibilities (
 );
 
 CREATE TABLE visibility_history (
-       visibilityHistoryId INTEGER,
+       visibilityHistoryId ${auto_increment_type},
        teamId VARCHAR(20),
        puzzleId VARCHAR(40),
        status VARCHAR(10) DEFAULT 'INVISIBLE',
