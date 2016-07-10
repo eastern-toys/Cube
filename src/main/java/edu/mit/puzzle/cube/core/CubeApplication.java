@@ -20,7 +20,8 @@ import edu.mit.puzzle.cube.core.serverresources.AbstractCubeResource;
 
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.mgt.DefaultSecurityManager;
-import org.apache.shiro.mgt.SecurityManager;
+import org.apache.shiro.mgt.DefaultSessionStorageEvaluator;
+import org.apache.shiro.mgt.DefaultSubjectDAO;
 import org.restlet.Application;
 import org.restlet.Component;
 import org.restlet.Restlet;
@@ -125,7 +126,15 @@ public class CubeApplication extends Application {
         CubeJdbcRealm realm = new CubeJdbcRealm();
         realm.setDataSource(connectionFactory.getDataSource());
 
-        SecurityManager securityManager = new DefaultSecurityManager(realm);
+        DefaultSecurityManager securityManager = new DefaultSecurityManager(realm);
+
+        // Disable Shiro session storage.
+        final DefaultSessionStorageEvaluator sessionStorageEvaluator = new DefaultSessionStorageEvaluator();
+        sessionStorageEvaluator.setSessionStorageEnabled(false);
+        final DefaultSubjectDAO subjectDAO = new DefaultSubjectDAO();
+        subjectDAO.setSessionStorageEvaluator(sessionStorageEvaluator);
+        securityManager.setSubjectDAO(subjectDAO);
+
         SecurityUtils.setSecurityManager(securityManager);
     }
 
