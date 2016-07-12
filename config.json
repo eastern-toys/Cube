@@ -1,7 +1,7 @@
 {
   "port": 8182,
   "huntDefinitionClassName": "edu.mit.puzzle.cube.huntimpl.linearexample.LinearExampleHuntDefinition",
-  "serviceEnvironment": "PRODUCTION",
+  "serviceEnvironment": "DEVELOPMENT",
   "databaseConfig": {
     "driverClassName": "org.sqlite.JDBC",
     "jdbcUrl": "jdbc:sqlite:/tmp/cube.db",

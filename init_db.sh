@@ -11,7 +11,7 @@ if [ "$RDBMS" == "sqlite" ] ; then
     if [ -f $SQLITE_FILENAME ] ; then
         rm $SQLITE_FILENAME
     fi
-    sed 's/${auto_increment_type}/INTEGER/' cube.sql | sqlite3 $DB_NAME
+    sed 's/${auto_increment_type}/INTEGER/' cube.sql | sqlite3 $SQLITE_FILENAME
 elif [ "$RDBMS" == "postgres" ] ; then
     DB_NAME=${PGDATABASE}
     export PGDATABASE=

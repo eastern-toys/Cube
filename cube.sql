@@ -68,16 +68,6 @@ CREATE TABLE puzzles (
        puzzleId VARCHAR(40),
        PRIMARY KEY(puzzleId)
 );
--- TODO: do this insertion somewhere hunt-specific - maybe add a "sync puzzle list" route to Cube to do it?
-INSERT INTO puzzles (puzzleId) VALUES
-       ('puzzle1'),
-       ('puzzle2'),
-       ('puzzle3'),
-       ('puzzle4'),
-       ('puzzle5'),
-       ('puzzle6'),
-       ('puzzle7')
-;
 
 CREATE TABLE submissions (
        submissionId ${auto_increment_type},
