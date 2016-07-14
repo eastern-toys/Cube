@@ -2,10 +2,15 @@ package edu.mit.puzzle.cube.core;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableSet;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.Set;
 
 import javax.annotation.Nullable;
@@ -58,6 +63,20 @@ public abstract class CubeConfig {
                 .setCorsAllowedOrigins(ImmutableSet.of("http://localhost:8081"))
                 .setHuntDefinitionClassName("edu.mit.puzzle.cube.huntimpl.linearexample.LinearExampleHuntDefinition")
                 .setServiceEnvironment(ServiceEnvironment.DEVELOPMENT);
+    }
+
+    public static CubeConfig readFromConfigJson() {
+        CubeConfig config;
+        try {
+            config = new ObjectMapper().readValue(new File("config.json"), CubeConfig.class);
+        } catch (JsonParseException | JsonMappingException e) {
+            System.err.println("Failed to load config file: " + e);
+            System.exit(1);
+            return null;
+        } catch (IOException e) {
+            config = CubeConfig.builder().build();
+        }
+        return config;
     }
 
     @JsonProperty("port") public abstract int getPort();

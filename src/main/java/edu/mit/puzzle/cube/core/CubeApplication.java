@@ -56,19 +56,7 @@ public class CubeApplication extends Application {
 
         setStatusService(new CubeStatusService(corsService));
 
-        HuntDefinition huntDefinition = null;
-        try {
-            @SuppressWarnings("unchecked")
-            Class<HuntDefinition> huntDefinitionClass = (Class<HuntDefinition>) Class.forName(config.getHuntDefinitionClassName());
-            huntDefinition = huntDefinitionClass.newInstance();
-            LOGGER.info("Using hunt definition {}", config.getHuntDefinitionClassName());
-        } catch (ClassNotFoundException e) {
-            LOGGER.error("Hunt definition class not found", e);
-            System.exit(1);
-        } catch (InstantiationException | IllegalAccessException e) {
-            LOGGER.error("Failed to instantiate hunt definition", e);
-            System.exit(1);
-        }
+        HuntDefinition huntDefinition = HuntDefinition.forClassName(config.getHuntDefinitionClassName());
 
         ServiceEnvironment serviceEnvironment = null;
         switch (config.getServiceEnvironment()) {
@@ -158,16 +146,7 @@ public class CubeApplication extends Application {
     }
 
     public static void main (String[] args) throws Exception {
-        CubeConfig config;
-        try {
-            config = new ObjectMapper().readValue(new File("config.json"), CubeConfig.class);
-        } catch (JsonParseException | JsonMappingException e) {
-            System.err.println("Failed to load config file: " + e);
-            System.exit(1);
-            return;
-        } catch (IOException e) {
-            config = CubeConfig.builder().build();
-        }
+        CubeConfig config = CubeConfig.readFromConfigJson();
 
         // Create a new Component.
         Component component = new Component();
