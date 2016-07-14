@@ -54,11 +54,12 @@ public class CubeTool {
     private class CommandInitDb implements Command {
         @Override
         public void run() {
-            CubeDatabaseSchema cubeDatabaseSchema = new CubeDatabaseSchema(
-                    cubeConfig.getDatabaseConfig().getDriverClassName()
-            );
             HuntDefinition huntDefinition = HuntDefinition.forClassName(
                     cubeConfig.getHuntDefinitionClassName()
+            );
+            CubeDatabaseSchema cubeDatabaseSchema = new CubeDatabaseSchema(
+                    cubeConfig.getDatabaseConfig().getDriverClassName(),
+                    huntDefinition.getVisibilityStatusSet()
             );
             try (
                     Connection connection = environment.getConnectionFactory().getConnection()

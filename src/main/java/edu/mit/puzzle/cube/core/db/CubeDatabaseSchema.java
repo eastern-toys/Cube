@@ -4,6 +4,8 @@ import com.google.common.base.Charsets;
 import com.google.common.base.Splitter;
 import com.google.common.io.Resources;
 
+import edu.mit.puzzle.cube.core.model.VisibilityStatusSet;
+
 import org.apache.commons.lang3.text.StrSubstitutor;
 
 import java.io.IOException;
@@ -16,11 +18,16 @@ import java.util.Map;
 
 public class CubeDatabaseSchema {
     private static final String VAR_AUTO_INCREMENT_TYPE = "auto_increment_type";
+    private static final String VAR_DEFAULT_VISIBILITY_STATUS = "default_visibility_status";
 
     private final String schema;
 
-    public CubeDatabaseSchema(String jdbcDriverClassName) {
+    public CubeDatabaseSchema(String jdbcDriverClassName, VisibilityStatusSet visibilityStatusSet) {
         Map<String, String> schemaTemplateMap = new HashMap<>();
+        schemaTemplateMap.put(
+                VAR_DEFAULT_VISIBILITY_STATUS,
+                visibilityStatusSet.getDefaultVisibilityStatus()
+        );
         switch (jdbcDriverClassName) {
         case "org.sqlite.JDBC":
             schemaTemplateMap.put(VAR_AUTO_INCREMENT_TYPE, "INTEGER");

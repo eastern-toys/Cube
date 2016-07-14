@@ -86,7 +86,7 @@ CREATE TABLE submissions (
 CREATE TABLE visibilities (
        teamId VARCHAR(20),
        puzzleId VARCHAR(40),
-       status VARCHAR(10) DEFAULT 'INVISIBLE',
+       status VARCHAR(10) DEFAULT '${default_visibility_status}',
        PRIMARY KEY(teamId, puzzleId),
        FOREIGN KEY(teamId) REFERENCES teams(teamId),
        FOREIGN KEY(puzzleId) REFERENCES puzzles(puzzleId)
@@ -96,7 +96,7 @@ CREATE TABLE visibility_history (
        visibilityHistoryId ${auto_increment_type},
        teamId VARCHAR(20),
        puzzleId VARCHAR(40),
-       status VARCHAR(10) DEFAULT 'INVISIBLE',
+       status VARCHAR(10) DEFAULT '${default_visibility_status}',
        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
        PRIMARY KEY(visibilityHistoryId),
        FOREIGN KEY(teamId) REFERENCES teams(teamId),

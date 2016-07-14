@@ -96,7 +96,10 @@ public class InMemoryConnectionFactory implements ConnectionFactory {
             List<String> puzzleIdList,
             List<User> userList
     ) {
-        CubeDatabaseSchema cubeDatabaseSchema = new CubeDatabaseSchema("org.sqlite.JDBC");
+        CubeDatabaseSchema cubeDatabaseSchema = new CubeDatabaseSchema(
+                "org.sqlite.JDBC",
+                visibilityStatusSet
+        );
         try (Connection connection = getConnection()) {
             cubeDatabaseSchema.execute(connection);
         } catch (SQLException e) {
