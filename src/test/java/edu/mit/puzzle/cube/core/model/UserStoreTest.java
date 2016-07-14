@@ -148,10 +148,6 @@ public class UserStoreTest {
         List<User> allUsers = userStore.getAllUsers();
         assertThat(allUsers).containsExactly(
                 User.builder()
-                        .setUsername("admin")
-                        .setRoles(ImmutableList.of("admin"))
-                        .build(),
-                User.builder()
                         .setUsername("writinguser")
                         .setRoles(ImmutableList.of("writingteam"))
                         .build(),

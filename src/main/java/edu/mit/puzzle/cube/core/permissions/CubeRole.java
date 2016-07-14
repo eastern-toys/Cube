@@ -26,6 +26,11 @@ public abstract class CubeRole {
                     new AllPermission()
             ));
 
+    public static final ImmutableList<CubeRole> ALL_ROLES = ImmutableList.of(
+            WRITING_TEAM,
+            ADMIN
+    );
+
     public static CubeRole create(String name) {
         return new AutoValue_CubeRole(name, ImmutableList.<CubePermission>of());
     }

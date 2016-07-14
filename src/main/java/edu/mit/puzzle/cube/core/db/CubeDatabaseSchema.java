@@ -5,6 +5,8 @@ import com.google.common.base.Splitter;
 import com.google.common.io.Resources;
 
 import edu.mit.puzzle.cube.core.model.VisibilityStatusSet;
+import edu.mit.puzzle.cube.core.permissions.CubePermission;
+import edu.mit.puzzle.cube.core.permissions.CubeRole;
 
 import org.apache.commons.lang3.text.StrSubstitutor;
 
@@ -58,6 +60,25 @@ public class CubeDatabaseSchema {
         for (String schemaStatement : schemaSplitter.split(schema)) {
             try (PreparedStatement statement = connection.prepareStatement(schemaStatement)) {
                 statement.execute();
+            }
+        }
+
+        try (
+                PreparedStatement insertRole = connection.prepareStatement(
+                        "INSERT INTO roles (role_name) VALUES (?)"
+                );
+                PreparedStatement insertPermission = connection.prepareStatement(
+                        "INSERT INTO roles_permissions (role_name, permission) VALUES (?,?)"
+                )
+        ) {
+            for (CubeRole role : CubeRole.ALL_ROLES) {
+                insertRole.setString(1, role.getName());
+                insertRole.executeUpdate();
+                insertPermission.setString(1, role.getName());
+                for (CubePermission permission : role.getPermissions()) {
+                    insertPermission.setString(2, permission.getWildcardString());
+                    insertPermission.executeUpdate();
+                }
             }
         }
     }
