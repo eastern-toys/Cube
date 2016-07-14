@@ -5,26 +5,19 @@ import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import com.beust.jcommander.Parameters;
-import com.google.common.base.Charsets;
-import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.io.Resources;
 
 import edu.mit.puzzle.cube.core.CubeConfig;
 import edu.mit.puzzle.cube.core.HuntDefinition;
+import edu.mit.puzzle.cube.core.db.CubeDatabaseSchema;
 import edu.mit.puzzle.cube.core.environments.ProductionEnvironment;
 import edu.mit.puzzle.cube.core.environments.ServiceEnvironment;
 import edu.mit.puzzle.cube.core.model.User;
 import edu.mit.puzzle.cube.core.model.UserStore;
 
-import org.apache.commons.lang3.text.StrSubstitutor;
-
-import java.io.IOException;
-import java.net.URL;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -59,46 +52,18 @@ public class CubeTool {
             commandDescription = "Initialize an empty database for use with Cube"
     )
     private class CommandInitDb implements Command {
-        private static final String VAR_AUTO_INCREMENT_TYPE = "auto_increment_type";
-
         @Override
         public void run() {
-            Map<String, String> schemaTemplateMap = new HashMap<>();
-            switch (cubeConfig.getDatabaseConfig().getDriverClassName()) {
-            case "org.sqlite.JDBC":
-                schemaTemplateMap.put(VAR_AUTO_INCREMENT_TYPE, "INTEGER");
-                break;
-            case "org.postgresql.Driver":
-                schemaTemplateMap.put(VAR_AUTO_INCREMENT_TYPE, "SERIAL");
-                break;
-            case "com.mysql.jdbc.Driver":
-                schemaTemplateMap.put(VAR_AUTO_INCREMENT_TYPE, "INT NOT NULL AUTO_INCREMENT");
-                break;
-            default:
-                throw new RuntimeException(
-                        "Unsupported database driver: "
-                        + cubeConfig.getDatabaseConfig().getDriverClassName());
-            }
-
-            URL schemaUrl = Resources.getResource("cube.sql");
-            String schemaTemplate;
-            try {
-                schemaTemplate = Resources.toString(schemaUrl, Charsets.UTF_8);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-            String schema = new StrSubstitutor(schemaTemplateMap).replace(schemaTemplate);
-
-            HuntDefinition huntDefinition = HuntDefinition.forClassName(cubeConfig.getHuntDefinitionClassName());
+            CubeDatabaseSchema cubeDatabaseSchema = new CubeDatabaseSchema(
+                    cubeConfig.getDatabaseConfig().getDriverClassName()
+            );
+            HuntDefinition huntDefinition = HuntDefinition.forClassName(
+                    cubeConfig.getHuntDefinitionClassName()
+            );
             try (
                     Connection connection = environment.getConnectionFactory().getConnection()
             ) {
-                Splitter schemaSplitter = Splitter.on(";").omitEmptyStrings().trimResults();
-                for (String schemaStatement : schemaSplitter.split(schema)) {
-                    try (PreparedStatement statement = connection.prepareStatement(schemaStatement)) {
-                        statement.execute();
-                    }
-                }
+                cubeDatabaseSchema.execute(connection);
                 try (
                         PreparedStatement insertPuzzleStatement = connection.prepareStatement(
                                 "INSERT INTO puzzles (puzzleId) VALUES (?)")
