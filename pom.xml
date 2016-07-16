@@ -48,6 +48,9 @@
                             <goal>single</goal>
                         </goals>
                         <configuration>
+                            <finalName>cube</finalName>
+                            <appendAssemblyId>false</appendAssemblyId>
+                            <attach>false</attach>
                             <archive>
                                 <manifest>
                                     <mainClass>edu.mit.puzzle.cube.core.CubeApplication</mainClass>
