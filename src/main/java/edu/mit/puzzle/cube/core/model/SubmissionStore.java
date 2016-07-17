@@ -70,6 +70,28 @@ public class SubmissionStore {
         return Ordering.natural().onResultOf(Submission::getSubmissionId).immutableSortedCopy(submissions);
     }
 
+    public List<Submission> getSubmissionsByTeam(String teamId) {
+        List<Submission> submissions = DatabaseHelper.query(
+                connectionFactory,
+                "SELECT * FROM submissions WHERE teamId = ?",
+                Lists.newArrayList(teamId),
+                Submission.class
+        );
+
+        return Ordering.natural().onResultOf(Submission::getSubmissionId).immutableSortedCopy(submissions);
+    }
+
+    public List<Submission> getSubmissionsByTeamAndPuzzle(String teamId, String puzzleId) {
+        List<Submission> submissions = DatabaseHelper.query(
+                connectionFactory,
+                "SELECT * FROM submissions WHERE teamId = ? AND puzzleId = ?",
+                Lists.newArrayList(teamId, puzzleId),
+                Submission.class
+        );
+
+        return Ordering.natural().onResultOf(Submission::getSubmissionId).immutableSortedCopy(submissions);
+    }
+
     public Optional<Submission> getSubmission(int submissionId) {
         List<Submission> submissions = DatabaseHelper.query(
                 connectionFactory,
