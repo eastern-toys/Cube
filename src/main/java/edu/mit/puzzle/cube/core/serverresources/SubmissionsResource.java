@@ -6,7 +6,6 @@ import edu.mit.puzzle.cube.core.model.Submissions;
 import edu.mit.puzzle.cube.core.permissions.PermissionAction;
 import edu.mit.puzzle.cube.core.permissions.SubmissionsPermission;
 
-import edu.mit.puzzle.cube.core.permissions.VisibilitiesPermission;
 import org.apache.shiro.SecurityUtils;
 import org.restlet.data.Status;
 import org.restlet.resource.Get;
@@ -22,7 +21,7 @@ public class SubmissionsResource extends AbstractCubeResource {
         Optional<String> teamId = Optional.ofNullable(getQueryValue("teamId"));
         if (teamId.isPresent()) {
             SecurityUtils.getSubject().checkPermission(
-                    new VisibilitiesPermission(teamId.get(), PermissionAction.READ));
+                    new SubmissionsPermission(teamId.get(), PermissionAction.READ));
             Optional<String> puzzleId = Optional.ofNullable(getQueryValue("puzzleId"));
             if (puzzleId.isPresent()) {
                 return Submissions.builder()
@@ -35,7 +34,7 @@ public class SubmissionsResource extends AbstractCubeResource {
             }
         } else {
             SecurityUtils.getSubject().checkPermission(
-                    new VisibilitiesPermission("*", PermissionAction.READ));
+                    new SubmissionsPermission("*", PermissionAction.READ));
             return Submissions.builder()
                     .setSubmissions(submissionStore.getAllSubmissions())
                     .build();
