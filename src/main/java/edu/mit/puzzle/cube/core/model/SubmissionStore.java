@@ -1,7 +1,8 @@
 package edu.mit.puzzle.cube.core.model;
 
+import com.google.auto.value.AutoValue;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Ordering;
 
 import edu.mit.puzzle.cube.core.db.ConnectionFactory;
 import edu.mit.puzzle.cube.core.db.DatabaseHelper;
@@ -59,37 +60,100 @@ public class SubmissionStore {
         ).isPresent();
     }
 
-    public List<Submission> getAllSubmissions() {
-        List<Submission> submissions = DatabaseHelper.query(
+    @AutoValue
+    public static abstract class PaginationOptions {
+        @AutoValue.Builder
+        public static abstract class Builder {
+            public abstract Builder setStartSubmissionId(Integer startSubmissionId);
+            public abstract Builder setPageSize(Integer pageSize);
+
+            public abstract PaginationOptions build();
+        }
+
+        public static Builder builder() {
+            return new AutoValue_SubmissionStore_PaginationOptions.Builder();
+        }
+
+        public static PaginationOptions none() {
+            return builder().build();
+        }
+
+        @Nullable public abstract Integer getStartSubmissionId();
+        @Nullable public abstract Integer getPageSize();
+
+        public String buildSelectQuery(List<String> parameterColumnNames) {
+            StringBuilder query = new StringBuilder();
+            query.append("SELECT * FROM submissions");
+            if (parameterColumnNames.size() > 0 || getStartSubmissionId() != null) {
+                query.append(" WHERE");
+                boolean firstClause = true;
+                for (String column : parameterColumnNames) {
+                    if (!firstClause) {
+                        query.append(" AND");
+                    }
+                    query.append(String.format(" %s = ?", column));
+                    firstClause = false;
+                }
+                if (getStartSubmissionId() != null) {
+                    if (!firstClause) {
+                        query.append(" AND");
+                    }
+                    query.append(String.format(" submissionId > %d", getStartSubmissionId()));
+                    firstClause = false;
+                }
+            }
+            query.append(" ORDER BY submissionId");
+            if (getPageSize() != null) {
+                query.append(String.format(" LIMIT %d", getPageSize()));
+            }
+            return query.toString();
+        }
+    }
+
+    public List<Submission> getAllSubmissions(PaginationOptions paginationOptions) {
+        return DatabaseHelper.query(
                 connectionFactory,
-                "SELECT * FROM submissions",
+                paginationOptions.buildSelectQuery(ImmutableList.of()),
                 Lists.newArrayList(),
                 Submission.class
         );
-
-        return Ordering.natural().onResultOf(Submission::getSubmissionId).immutableSortedCopy(submissions);
     }
 
-    public List<Submission> getSubmissionsByTeam(String teamId) {
-        List<Submission> submissions = DatabaseHelper.query(
+    public List<Submission> getSubmissionsByStatus(
+            PaginationOptions paginationOptions,
+            SubmissionStatus status
+    ) {
+        return DatabaseHelper.query(
                 connectionFactory,
-                "SELECT * FROM submissions WHERE teamId = ?",
+                paginationOptions.buildSelectQuery(ImmutableList.of("status")),
+                Lists.newArrayList(status),
+                Submission.class
+        );
+    }
+
+    public List<Submission> getSubmissionsByTeam(
+            PaginationOptions paginationOptions,
+            String teamId
+    ) {
+        return DatabaseHelper.query(
+                connectionFactory,
+                paginationOptions.buildSelectQuery(ImmutableList.of("teamId")),
                 Lists.newArrayList(teamId),
                 Submission.class
         );
-
-        return Ordering.natural().onResultOf(Submission::getSubmissionId).immutableSortedCopy(submissions);
     }
 
-    public List<Submission> getSubmissionsByTeamAndPuzzle(String teamId, String puzzleId) {
-        List<Submission> submissions = DatabaseHelper.query(
+    public List<Submission> getSubmissionsByTeamAndPuzzle(
+            PaginationOptions paginationOptions,
+            String teamId,
+            String puzzleId
+    ) {
+        return DatabaseHelper.query(
                 connectionFactory,
-                "SELECT * FROM submissions WHERE teamId = ? AND puzzleId = ?",
+                paginationOptions.buildSelectQuery(ImmutableList.of("teamId", "puzzleId")),
                 Lists.newArrayList(teamId, puzzleId),
                 Submission.class
         );
-
-        return Ordering.natural().onResultOf(Submission::getSubmissionId).immutableSortedCopy(submissions);
     }
 
     public Optional<Submission> getSubmission(int submissionId) {

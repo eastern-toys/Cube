@@ -2,6 +2,7 @@ package edu.mit.puzzle.cube.core.serverresources;
 
 import edu.mit.puzzle.cube.core.model.PostResult;
 import edu.mit.puzzle.cube.core.model.Submission;
+import edu.mit.puzzle.cube.core.model.SubmissionStore;
 import edu.mit.puzzle.cube.core.model.Submissions;
 import edu.mit.puzzle.cube.core.permissions.PermissionAction;
 import edu.mit.puzzle.cube.core.permissions.SubmissionsPermission;
@@ -12,33 +13,55 @@ import org.restlet.resource.Get;
 import org.restlet.resource.Post;
 import org.restlet.resource.ResourceException;
 
+import java.util.List;
 import java.util.Optional;
 
 public class SubmissionsResource extends AbstractCubeResource {
 
+    private SubmissionStore.PaginationOptions getPaginationOptions() {
+        SubmissionStore.PaginationOptions.Builder paginationOptions =
+                SubmissionStore.PaginationOptions.builder();
+        try {
+            String value = getQueryValue("startSubmissionId");
+            if (value != null) {
+                paginationOptions.setStartSubmissionId(Integer.parseInt(value));
+            }
+            value = getQueryValue("pageSize");
+            if (value != null) {
+                paginationOptions.setPageSize(Integer.parseInt(value));
+            }
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("query parameter is not an int");
+        }
+        return paginationOptions.build();
+    }
+
     @Get
     public Submissions handleGet() {
         Optional<String> teamId = Optional.ofNullable(getQueryValue("teamId"));
+        List<Submission> submissions;
         if (teamId.isPresent()) {
             SecurityUtils.getSubject().checkPermission(
                     new SubmissionsPermission(teamId.get(), PermissionAction.READ));
             Optional<String> puzzleId = Optional.ofNullable(getQueryValue("puzzleId"));
             if (puzzleId.isPresent()) {
-                return Submissions.builder()
-                        .setSubmissions(submissionStore.getSubmissionsByTeamAndPuzzle(teamId.get(), puzzleId.get()))
-                        .build();
+                submissions = submissionStore.getSubmissionsByTeamAndPuzzle(
+                        getPaginationOptions(),
+                        teamId.get(),
+                        puzzleId.get()
+                );
             } else {
-                return Submissions.builder()
-                        .setSubmissions(submissionStore.getSubmissionsByTeam(teamId.get()))
-                        .build();
+                submissions = submissionStore.getSubmissionsByTeam(
+                        getPaginationOptions(),
+                        teamId.get()
+                );
             }
         } else {
             SecurityUtils.getSubject().checkPermission(
                     new SubmissionsPermission("*", PermissionAction.READ));
-            return Submissions.builder()
-                    .setSubmissions(submissionStore.getAllSubmissions())
-                    .build();
+            submissions = submissionStore.getAllSubmissions(getPaginationOptions());
         }
+        return Submissions.builder().setSubmissions(submissions).build();
     }
 
     @Post

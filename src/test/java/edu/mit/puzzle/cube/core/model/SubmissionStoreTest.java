@@ -20,6 +20,7 @@ import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
@@ -62,7 +63,9 @@ public class SubmissionStoreTest {
                 .setSubmission("guess1")
                 .build());
 
-        List<Submission> submissions = submissionStore.getAllSubmissions();
+        List<Submission> submissions = submissionStore.getAllSubmissions(
+                SubmissionStore.PaginationOptions.none()
+        );
         assertEquals(1, submissions.size());
         assertEquals(1, submissions.get(0).getSubmissionId().intValue());
         assertEquals(TEST_TEAM_ID, submissions.get(0).getTeamId());
@@ -99,7 +102,9 @@ public class SubmissionStoreTest {
                 .setSubmission("guess2")
                 .build());
 
-        List<Submission> submissions = submissionStore.getAllSubmissions();
+        List<Submission> submissions = submissionStore.getAllSubmissions(
+                SubmissionStore.PaginationOptions.none()
+        );
         assertEquals(2, submissions.size());
         assertEquals(1, submissions.get(0).getSubmissionId().intValue());
         assertEquals("guess1", submissions.get(0).getSubmission());
@@ -120,11 +125,27 @@ public class SubmissionStoreTest {
                 .build());
         Submission submission = submissionStore.getSubmission(1).get();
         assertEquals(SubmissionStatus.SUBMITTED, submission.getStatus());
+        assertThat(submissionStore.getSubmissionsByStatus(
+                SubmissionStore.PaginationOptions.none(),
+                SubmissionStatus.SUBMITTED
+        )).hasSize(1);
+        assertThat(submissionStore.getSubmissionsByStatus(
+                SubmissionStore.PaginationOptions.none(),
+                SubmissionStatus.ASSIGNED
+        )).hasSize(0);
 
         submissionStore.setSubmissionStatus(1, SubmissionStatus.ASSIGNED, "writingteamuser");
         submission = submissionStore.getSubmission(1).get();
         assertEquals(SubmissionStatus.ASSIGNED, submission.getStatus());
         assertEquals("writingteamuser", submission.getCallerUsername());
+        assertThat(submissionStore.getSubmissionsByStatus(
+                SubmissionStore.PaginationOptions.none(),
+                SubmissionStatus.SUBMITTED
+        )).hasSize(0);
+        assertThat(submissionStore.getSubmissionsByStatus(
+                SubmissionStore.PaginationOptions.none(),
+                SubmissionStatus.ASSIGNED
+        )).hasSize(1);
 
         verifyZeroInteractions(eventProcessor);
 
@@ -133,6 +154,14 @@ public class SubmissionStoreTest {
         submission = submissionStore.getSubmission(1).get();
         assertEquals(SubmissionStatus.SUBMITTED, submission.getStatus());
         assertEquals(null, submission.getCallerUsername());
+        assertThat(submissionStore.getSubmissionsByStatus(
+                SubmissionStore.PaginationOptions.none(),
+                SubmissionStatus.SUBMITTED
+        )).hasSize(1);
+        assertThat(submissionStore.getSubmissionsByStatus(
+                SubmissionStore.PaginationOptions.none(),
+                SubmissionStatus.ASSIGNED
+        )).hasSize(0);
 
         verifyZeroInteractions(eventProcessor);
 
@@ -141,6 +170,14 @@ public class SubmissionStoreTest {
         submission = submissionStore.getSubmission(1).get();
         assertEquals(SubmissionStatus.ASSIGNED, submission.getStatus());
         assertEquals("writingteamuser", submission.getCallerUsername());
+        assertThat(submissionStore.getSubmissionsByStatus(
+                SubmissionStore.PaginationOptions.none(),
+                SubmissionStatus.SUBMITTED
+        )).hasSize(0);
+        assertThat(submissionStore.getSubmissionsByStatus(
+                SubmissionStore.PaginationOptions.none(),
+                SubmissionStatus.ASSIGNED
+        )).hasSize(1);
 
         verifyZeroInteractions(eventProcessor);
 
@@ -148,8 +185,76 @@ public class SubmissionStoreTest {
         submission = submissionStore.getSubmission(1).get();
         assertEquals(SubmissionStatus.CORRECT, submission.getStatus());
         assertEquals("writingteamuser", submission.getCallerUsername());
+        assertThat(submissionStore.getSubmissionsByStatus(
+                SubmissionStore.PaginationOptions.none(),
+                SubmissionStatus.ASSIGNED
+        )).hasSize(0);
+        assertThat(submissionStore.getSubmissionsByStatus(
+                SubmissionStore.PaginationOptions.none(),
+                SubmissionStatus.CORRECT
+        )).hasSize(1);
 
         verify(eventProcessor, times(1)).process(any(Event.class));
     }
 
+    @Test
+    public void testPagination() {
+        for (int i = 0; i < 50; i++) {
+            submissionStore.addSubmission(Submission.builder()
+                    .setTeamId(TEST_TEAM_ID)
+                    .setPuzzleId(TEST_PUZZLE_ID)
+                    .setSubmission(String.format("guess%d", i))
+                    .build());
+        }
+
+        List<Submission> submissions = submissionStore.getAllSubmissions(
+                SubmissionStore.PaginationOptions.builder()
+                        .setPageSize(10)
+                        .build()
+        );
+        assertThat(submissions).hasSize(10);
+        assertThat(submissions.get(0).getSubmission()).isEqualTo("guess0");
+        assertThat(submissions.get(9).getSubmission()).isEqualTo("guess9");
+
+        submissions = submissionStore.getAllSubmissions(
+                SubmissionStore.PaginationOptions.builder()
+                        .setStartSubmissionId(submissions.get(9).getSubmissionId())
+                        .setPageSize(10)
+                        .build()
+        );
+        assertThat(submissions).hasSize(10);
+        assertThat(submissions.get(0).getSubmission()).isEqualTo("guess10");
+        assertThat(submissions.get(9).getSubmission()).isEqualTo("guess19");
+
+        submissions = submissionStore.getSubmissionsByTeam(
+                SubmissionStore.PaginationOptions.builder()
+                        .setStartSubmissionId(submissions.get(9).getSubmissionId())
+                        .setPageSize(10)
+                        .build(),
+                TEST_TEAM_ID
+        );
+        assertThat(submissions).hasSize(10);
+        assertThat(submissions.get(0).getSubmission()).isEqualTo("guess20");
+        assertThat(submissions.get(9).getSubmission()).isEqualTo("guess29");
+
+        submissions = submissionStore.getSubmissionsByTeamAndPuzzle(
+                SubmissionStore.PaginationOptions.builder()
+                        .setStartSubmissionId(submissions.get(9).getSubmissionId())
+                        .setPageSize(10)
+                        .build(),
+                TEST_TEAM_ID,
+                TEST_PUZZLE_ID
+        );
+        assertThat(submissions).hasSize(10);
+        assertThat(submissions.get(0).getSubmission()).isEqualTo("guess30");
+        assertThat(submissions.get(9).getSubmission()).isEqualTo("guess39");
+
+        submissions = submissionStore.getAllSubmissions(
+                SubmissionStore.PaginationOptions.builder()
+                        .setStartSubmissionId(50)
+                        .setPageSize(10)
+                        .build()
+        );
+        assertThat(submissions).isEmpty();
+    }
 }
