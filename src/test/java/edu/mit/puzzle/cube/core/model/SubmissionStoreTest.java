@@ -19,6 +19,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Optional;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
@@ -209,7 +210,7 @@ public class SubmissionStoreTest {
 
         List<Submission> submissions = submissionStore.getAllSubmissions(
                 SubmissionStore.PaginationOptions.builder()
-                        .setPageSize(10)
+                        .setPageSize(Optional.of(10))
                         .build()
         );
         assertThat(submissions).hasSize(10);
@@ -218,8 +219,8 @@ public class SubmissionStoreTest {
 
         submissions = submissionStore.getAllSubmissions(
                 SubmissionStore.PaginationOptions.builder()
-                        .setStartSubmissionId(submissions.get(9).getSubmissionId())
-                        .setPageSize(10)
+                        .setStartSubmissionId(Optional.of(submissions.get(9).getSubmissionId()))
+                        .setPageSize(Optional.of(10))
                         .build()
         );
         assertThat(submissions).hasSize(10);
@@ -228,8 +229,8 @@ public class SubmissionStoreTest {
 
         submissions = submissionStore.getSubmissionsByTeam(
                 SubmissionStore.PaginationOptions.builder()
-                        .setStartSubmissionId(submissions.get(9).getSubmissionId())
-                        .setPageSize(10)
+                        .setStartSubmissionId(Optional.of(submissions.get(9).getSubmissionId()))
+                        .setPageSize(Optional.of(10))
                         .build(),
                 TEST_TEAM_ID
         );
@@ -239,8 +240,8 @@ public class SubmissionStoreTest {
 
         submissions = submissionStore.getSubmissionsByTeamAndPuzzle(
                 SubmissionStore.PaginationOptions.builder()
-                        .setStartSubmissionId(submissions.get(9).getSubmissionId())
-                        .setPageSize(10)
+                        .setStartSubmissionId(Optional.of(submissions.get(9).getSubmissionId()))
+                        .setPageSize(Optional.of(10))
                         .build(),
                 TEST_TEAM_ID,
                 TEST_PUZZLE_ID
@@ -251,8 +252,8 @@ public class SubmissionStoreTest {
 
         submissions = submissionStore.getAllSubmissions(
                 SubmissionStore.PaginationOptions.builder()
-                        .setStartSubmissionId(50)
-                        .setPageSize(10)
+                        .setStartSubmissionId(Optional.of(50))
+                        .setPageSize(Optional.of(10))
                         .build()
         );
         assertThat(submissions).isEmpty();

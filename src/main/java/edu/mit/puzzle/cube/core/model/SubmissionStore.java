@@ -1,6 +1,7 @@
 package edu.mit.puzzle.cube.core.model;
 
 import com.google.auto.value.AutoValue;
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
@@ -15,6 +16,7 @@ import org.slf4j.LoggerFactory;
 
 import java.sql.Timestamp;
 import java.time.Clock;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -61,86 +63,133 @@ public class SubmissionStore {
     }
 
     @AutoValue
+    public static abstract class FilterOptions {
+        @AutoValue.Builder
+        public static abstract class Builder {
+            public abstract Builder setTeamId(Optional<String> teamId);
+            public abstract Builder setPuzzleId(Optional<String> puzzleId);
+            public abstract Builder setStatuses(List<SubmissionStatus> statuses);
+            public abstract Builder setCallerUsername(Optional<String> callerUsername);
+
+            public abstract FilterOptions build();
+        }
+
+        public static Builder builder() {
+            return new AutoValue_SubmissionStore_FilterOptions.Builder()
+                    .setTeamId(Optional.empty())
+                    .setPuzzleId(Optional.empty())
+                    .setStatuses(ImmutableList.<SubmissionStatus>of())
+                    .setCallerUsername(Optional.empty());
+        }
+
+        public abstract Optional<String> getTeamId();
+        public abstract Optional<String> getPuzzleId();
+        public abstract List<SubmissionStatus> getStatuses();
+        public abstract Optional<String> getCallerUsername();
+
+        public boolean hasFilters() {
+            return getTeamId().isPresent()
+                    || getPuzzleId().isPresent()
+                    || getStatuses().size() > 0
+                    || getCallerUsername().isPresent();
+        }
+    }
+
+    @AutoValue
     public static abstract class PaginationOptions {
         @AutoValue.Builder
         public static abstract class Builder {
-            public abstract Builder setStartSubmissionId(Integer startSubmissionId);
-            public abstract Builder setPageSize(Integer pageSize);
+            public abstract Builder setStartSubmissionId(Optional<Integer> startSubmissionId);
+            public abstract Builder setPageSize(Optional<Integer> pageSize);
 
             public abstract PaginationOptions build();
         }
 
         public static Builder builder() {
-            return new AutoValue_SubmissionStore_PaginationOptions.Builder();
+            return new AutoValue_SubmissionStore_PaginationOptions.Builder()
+                    .setStartSubmissionId(Optional.empty())
+                    .setPageSize(Optional.empty());
         }
 
         public static PaginationOptions none() {
             return builder().build();
         }
 
-        @Nullable public abstract Integer getStartSubmissionId();
-        @Nullable public abstract Integer getPageSize();
+        public abstract Optional<Integer> getStartSubmissionId();
+        public abstract Optional<Integer> getPageSize();
+    }
 
-        public String buildSelectQuery(List<String> parameterColumnNames) {
-            StringBuilder query = new StringBuilder();
-            query.append("SELECT * FROM submissions");
-            if (parameterColumnNames.size() > 0 || getStartSubmissionId() != null) {
-                query.append(" WHERE");
-                boolean firstClause = true;
-                for (String column : parameterColumnNames) {
-                    if (!firstClause) {
-                        query.append(" AND");
-                    }
-                    query.append(String.format(" %s = ?", column));
-                    firstClause = false;
-                }
-                if (getStartSubmissionId() != null) {
-                    if (!firstClause) {
-                        query.append(" AND");
-                    }
-                    query.append(String.format(" submissionId > %d", getStartSubmissionId()));
-                    firstClause = false;
-                }
+    public List<Submission> getSubmissions(
+            FilterOptions filterOptions,
+            PaginationOptions paginationOptions
+    ) {
+        StringBuilder query = new StringBuilder();
+        ImmutableList.Builder<Object> parameterList = ImmutableList.builder();
+        query.append("SELECT * FROM submissions");
+        if (filterOptions.hasFilters() || paginationOptions.getStartSubmissionId().isPresent()) {
+            List<String> whereClauses = new ArrayList<>();
+            if (filterOptions.getTeamId().isPresent()) {
+                whereClauses.add("teamId = ?");
+                parameterList.add(filterOptions.getTeamId().get());
             }
-            query.append(" ORDER BY submissionId");
-            if (getPageSize() != null) {
-                query.append(String.format(" LIMIT %d", getPageSize()));
+            if (filterOptions.getPuzzleId().isPresent()) {
+                whereClauses.add("puzzleId = ?");
+                parameterList.add(filterOptions.getPuzzleId().get());
             }
-            return query.toString();
+            if (!filterOptions.getStatuses().isEmpty()) {
+                List<String> statusClauses = new ArrayList<>();
+                for (SubmissionStatus status : filterOptions.getStatuses()) {
+                    statusClauses.add("status = ?");
+                    parameterList.add(status);
+                }
+                whereClauses.add(String.format("(%s)", Joiner.on(" OR ").join(statusClauses)));
+            }
+            if (filterOptions.getCallerUsername().isPresent()) {
+                whereClauses.add("callerUsername = ?");
+                parameterList.add(filterOptions.getCallerUsername().get());
+            }
+            if (paginationOptions.getStartSubmissionId().isPresent()) {
+                whereClauses.add(String.format(
+                        " submissionId > %d",
+                        paginationOptions.getStartSubmissionId().get()
+                ));
+            }
+            query.append(String.format(" WHERE %s", Joiner.on(" AND ").join(whereClauses)));
         }
+        query.append(" ORDER BY submissionId");
+        if (paginationOptions.getPageSize().isPresent()) {
+            query.append(String.format(" LIMIT %d", paginationOptions.getPageSize().get()));
+        }
+        return DatabaseHelper.query(
+                connectionFactory,
+                query.toString(),
+                parameterList.build(),
+                Submission.class
+        );
     }
 
     public List<Submission> getAllSubmissions(PaginationOptions paginationOptions) {
-        return DatabaseHelper.query(
-                connectionFactory,
-                paginationOptions.buildSelectQuery(ImmutableList.of()),
-                Lists.newArrayList(),
-                Submission.class
-        );
+        return getSubmissions(FilterOptions.builder().build(), paginationOptions);
     }
 
     public List<Submission> getSubmissionsByStatus(
             PaginationOptions paginationOptions,
             SubmissionStatus status
     ) {
-        return DatabaseHelper.query(
-                connectionFactory,
-                paginationOptions.buildSelectQuery(ImmutableList.of("status")),
-                Lists.newArrayList(status),
-                Submission.class
-        );
+        FilterOptions filterOptions = FilterOptions.builder()
+                .setStatuses(ImmutableList.of(status))
+                .build();
+        return getSubmissions(filterOptions, paginationOptions);
     }
 
     public List<Submission> getSubmissionsByTeam(
             PaginationOptions paginationOptions,
             String teamId
     ) {
-        return DatabaseHelper.query(
-                connectionFactory,
-                paginationOptions.buildSelectQuery(ImmutableList.of("teamId")),
-                Lists.newArrayList(teamId),
-                Submission.class
-        );
+        FilterOptions filterOptions = FilterOptions.builder()
+                .setTeamId(Optional.of(teamId))
+                .build();
+        return getSubmissions(filterOptions, paginationOptions);
     }
 
     public List<Submission> getSubmissionsByTeamAndPuzzle(
@@ -148,12 +197,11 @@ public class SubmissionStore {
             String teamId,
             String puzzleId
     ) {
-        return DatabaseHelper.query(
-                connectionFactory,
-                paginationOptions.buildSelectQuery(ImmutableList.of("teamId", "puzzleId")),
-                Lists.newArrayList(teamId, puzzleId),
-                Submission.class
-        );
+        FilterOptions filterOptions = FilterOptions.builder()
+                .setTeamId(Optional.of(teamId))
+                .setPuzzleId(Optional.of(puzzleId))
+                .build();
+        return getSubmissions(filterOptions, paginationOptions);
     }
 
     public Optional<Submission> getSubmission(int submissionId) {

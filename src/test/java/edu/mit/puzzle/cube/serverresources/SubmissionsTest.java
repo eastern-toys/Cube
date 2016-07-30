@@ -68,6 +68,37 @@ public class SubmissionsTest extends RestletTest {
     }
 
     @Test
+    public void testTeamIdAndStatus() {
+        setCurrentUserCredentials(TEAM);
+        postNewSubmission(TEAM.getIdentifier(), PUZZLE_ID, "teamanswer");
+
+        setCurrentUserCredentials(TEAM2);
+        postNewSubmission(TEAM2.getIdentifier(), PUZZLE_ID, "team2answer");
+
+        JsonNode response = get("/submissions?teamId=team2&status=SUBMITTED");
+        ArrayNode submissions = (ArrayNode) response.get("submissions");
+        assertThat(submissions.size()).isEqualTo(1);
+
+        response = get("/submissions?teamId=team2&status=ASSIGNED");
+        submissions = (ArrayNode) response.get("submissions");
+        assertThat(submissions.size()).isEqualTo(0);
+
+        setCurrentUserCredentials(ADMIN_CREDENTIALS);
+
+        response = get("/submissions?status=SUBMITTED");
+        submissions = (ArrayNode) response.get("submissions");
+        assertThat(submissions.size()).isEqualTo(2);
+
+        response = get("/submissions?status=ASSIGNED");
+        submissions = (ArrayNode) response.get("submissions");
+        assertThat(submissions.size()).isEqualTo(0);
+
+        response = get("/submissions?status=SUBMITTED,ASSIGNED");
+        submissions = (ArrayNode) response.get("submissions");
+        assertThat(submissions.size()).isEqualTo(2);
+    }
+
+    @Test
     public void testPagination() {
         setCurrentUserCredentials(TEAM);
         for (int i = 0; i < 20; i++) {
