@@ -187,13 +187,61 @@ public class HuntStatusStoreTest {
 
     @Test
     public void setTeamProperties() {
-        assertTrue(huntStatusStore.getTeam(TEST_TEAM_ID).getTeamProperties().isEmpty());
-        assertTrue(huntStatusStore.setTeamProperty(
+        assertThat(huntStatusStore.getTeam(TEST_TEAM_ID).getTeamProperties()).isNull();
+        assertThat(huntStatusStore.setTeamProperty(
                 TEST_TEAM_ID,
                 HuntStatusStoreTestProperty.class,
-                HuntStatusStoreTestProperty.create("SOME_VALUE")));
+                HuntStatusStoreTestProperty.create("SOME_VALUE"))).isTrue();
+
         Team team = huntStatusStore.getTeam(TEST_TEAM_ID);
-        assertEquals(1, team.getTeamProperties().size());
-        assertEquals("SOME_VALUE", team.getTeamProperty(HuntStatusStoreTestProperty.class).getValue());
+        assertThat(team.getTeamProperties()).hasSize(1);
+        assertThat(team.getTeamProperty(HuntStatusStoreTestProperty.class).getValue())
+                .isEqualTo("SOME_VALUE");
+
+        List<Team> teams = huntStatusStore.getTeams();
+        assertThat(teams).containsExactly(team);
+
+        Team team2 = Team.builder()
+                .setTeamId("team2")
+                .setEmail("team2@team2.com")
+                .setPrimaryPhone("012-345-6789")
+                .setSecondaryPhone("987-654-3210")
+                .build();
+        huntStatusStore.addTeam(team2);
+
+        Team readTeam2 = huntStatusStore.getTeam("team2");
+        assertThat(readTeam2).isEqualTo(team2);
+        assertThat(readTeam2.getTeamProperties()).isNull();
+
+        assertThat(huntStatusStore.setTeamProperty(
+                "team2",
+                HuntStatusStoreTestProperty.class,
+                HuntStatusStoreTestProperty.create("TEAM2_VALUE"))).isTrue();
+
+        team2 = huntStatusStore.getTeam("team2");
+        assertThat(team2.getTeamProperties()).hasSize(1);
+        assertThat(team2.getTeamProperty(HuntStatusStoreTestProperty.class).getValue())
+                .isEqualTo("TEAM2_VALUE");
+
+        teams = huntStatusStore.getTeams();
+        assertThat(teams).containsExactly(team, team2);
+    }
+
+    @Test
+    public void updateTeam() {
+        Team team = huntStatusStore.getTeam(TEST_TEAM_ID);
+        assertThat(team.getEmail()).isNull();
+        assertThat(team.getPrimaryPhone()).isNull();
+        assertThat(team.getSecondaryPhone()).isNull();
+
+        team = team.toBuilder()
+                .setEmail("testteam@testteam.com")
+                .setPrimaryPhone("012-345-6789")
+                .setSecondaryPhone("987-654-3210")
+                .build();
+        assertThat(huntStatusStore.updateTeam(team)).isTrue();
+
+        Team readTeam = huntStatusStore.getTeam(TEST_TEAM_ID);
+        assertThat(readTeam).isEqualTo(team);
     }
 }

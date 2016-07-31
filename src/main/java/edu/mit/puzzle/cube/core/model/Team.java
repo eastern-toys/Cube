@@ -6,14 +6,21 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.google.auto.value.AutoValue;
 import com.google.common.base.Preconditions;
 
+import org.restlet.data.Status;
+import org.restlet.resource.ResourceException;
+
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import javax.annotation.Nullable;
 
 @AutoValue
 @JsonDeserialize(builder = AutoValue_Team.Builder.class)
 public abstract class Team {
+    private static final Pattern EMAIL_VALIDATOR = Pattern.compile(
+            "^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}$", Pattern.CASE_INSENSITIVE);
+
     public static abstract class Property {
         private static Map<String, Class<? extends Property>> propertyClasses = new HashMap<>();
 
@@ -32,6 +39,15 @@ public abstract class Team {
 
         @Nullable
         @JsonProperty("password") public abstract Builder setPassword(@Nullable String password);
+
+        @Nullable
+        @JsonProperty("email") public abstract Builder setEmail(@Nullable String email);
+
+        @Nullable
+        @JsonProperty("primaryPhone") public abstract Builder setPrimaryPhone(@Nullable String primaryPhone);
+
+        @Nullable
+        @JsonProperty("secondaryPhone") public abstract Builder setSecondaryPhone(@Nullable String secondaryPhone);
 
         @Nullable
         @JsonProperty("teamProperties")
@@ -84,7 +100,32 @@ public abstract class Team {
     public abstract String getPassword();
 
     @Nullable
+    @JsonProperty("email")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public abstract String getEmail();
+
+    @Nullable
+    @JsonProperty("primaryPhone")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public abstract String getPrimaryPhone();
+
+    @Nullable
+    @JsonProperty("secondaryPhone")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public abstract String getSecondaryPhone();
+
+    @Nullable
     @JsonProperty("teamProperties")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public abstract Map<String, Property> getTeamProperties();
+
+    public void validate() {
+        if (getEmail() != null) {
+            if (!EMAIL_VALIDATOR.matcher(getEmail()).matches()) {
+                throw new ResourceException(
+                        Status.CLIENT_ERROR_BAD_REQUEST.getCode(),
+                        String.format("Invalid email address: %s", getEmail()));
+            }
+        }
+    }
 }

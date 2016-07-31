@@ -27,6 +27,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Clock;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -146,16 +147,18 @@ public class HuntStatusStore {
         return teams.stream().map(Team::getTeamId).collect(Collectors.toSet());
     }
 
-    public Team getTeam(String teamId) {
-        Table<Integer, String, Object> teamPropertiesResults = DatabaseHelper.query(
-                connectionFactory,
-                "SELECT propertyKey, propertyValue FROM team_properties " +
-                        "WHERE teamId = ?",
-                Lists.newArrayList(teamId)
-        );
+    private Map<String, Map<String, Team.Property>> deserializeTeamProperties(
+            Table<Integer, String, Object> teamPropertiesResults
+    ) {
+        Map<String, Map<String, Team.Property>> allTeamProperties = new HashMap<>();
+        for (Map<String, Object> rowMap : teamPropertiesResults.rowMap().values()) {
+            String teamId = (String) rowMap.get("teamId");
+            Map<String, Team.Property> teamProperties = allTeamProperties.get(teamId);
+            if (teamProperties == null) {
+                teamProperties = new HashMap<>();
+                allTeamProperties.put(teamId, teamProperties);
+            }
 
-        ImmutableMap.Builder<String, Team.Property> teamProperties = ImmutableMap.builder();
-        for (Map<String,Object> rowMap : teamPropertiesResults.rowMap().values()) {
             String key = (String) rowMap.get("propertyKey");
             String value = (String) rowMap.get("propertyValue");
             Class<? extends Team.Property> propertyClass = Team.Property.getClass(key);
@@ -166,18 +169,52 @@ public class HuntStatusStore {
                 throw new RuntimeException(e);
             }
         }
+        return allTeamProperties;
+    }
+
+    public Team getTeam(String teamId) {
+        Table<Integer, String, Object> teamPropertiesResults = DatabaseHelper.query(
+                connectionFactory,
+                "SELECT teamId, propertyKey, propertyValue FROM team_properties " +
+                        "WHERE teamId = ?",
+                Lists.newArrayList(teamId)
+        );
+        Map<String, Team.Property> teamProperties =
+                deserializeTeamProperties(teamPropertiesResults).get(teamId);
 
         List<Team> teams = DatabaseHelper.query(
                 connectionFactory,
-                "SELECT teamId FROM teams WHERE teamId = ?",
+                "SELECT * FROM teams WHERE teamId = ?",
                 Lists.newArrayList(teamId),
                 Team.class
         );
         Team team = Iterables.getOnlyElement(teams);
 
         return team.toBuilder()
-                .setTeamProperties(teamProperties.build())
+                .setTeamProperties(teamProperties)
                 .build();
+    }
+
+    public List<Team> getTeams() {
+        Table<Integer, String, Object> teamPropertiesResults = DatabaseHelper.query(
+                connectionFactory,
+                "SELECT teamId, propertyKey, propertyValue FROM team_properties",
+                ImmutableList.of()
+        );
+        Map<String, Map<String, Team.Property>> allTeamProperties =
+                deserializeTeamProperties(teamPropertiesResults);
+
+        List<Team> teams = DatabaseHelper.query(
+                connectionFactory,
+                "SELECT * FROM teams",
+                ImmutableList.of(),
+                Team.class
+        );
+
+        return teams.stream()
+                .map(team -> team.toBuilder().setTeamProperties(
+                        allTeamProperties.get(team.getTeamId())).build())
+                .collect(Collectors.toList());
     }
 
     public boolean setTeamProperty(
@@ -218,15 +255,38 @@ public class HuntStatusStore {
         try (
                 Connection connection = connectionFactory.getConnection();
                 PreparedStatement insertTeamStatement = connection.prepareStatement(
-                        "INSERT INTO teams (teamId) VALUES (?)")
+                        "INSERT INTO teams (teamId, email, primaryPhone, secondaryPhone) VALUES (?,?,?,?)")
         ) {
             insertTeamStatement.setString(1, team.getTeamId());
+            insertTeamStatement.setString(2, team.getEmail());
+            insertTeamStatement.setString(3, team.getPrimaryPhone());
+            insertTeamStatement.setString(4, team.getSecondaryPhone());
             insertTeamStatement.executeUpdate();
         } catch (SQLException e) {
             throw new ResourceException(
                     Status.CLIENT_ERROR_BAD_REQUEST.getCode(),
                     e,
                     "Failed to add team to the database");
+        }
+    }
+
+    public boolean updateTeam(Team team) {
+        try (
+                Connection connection = connectionFactory.getConnection();
+                PreparedStatement insertTeamStatement = connection.prepareStatement(
+                        "UPDATE teams SET email = ?, primaryPhone = ?, secondaryPhone = ? " +
+                        "WHERE teamId = ?")
+        ) {
+            insertTeamStatement.setString(1, team.getEmail());
+            insertTeamStatement.setString(2, team.getPrimaryPhone());
+            insertTeamStatement.setString(3, team.getSecondaryPhone());
+            insertTeamStatement.setString(4, team.getTeamId());
+            return insertTeamStatement.executeUpdate() > 0;
+        } catch (SQLException e) {
+            throw new ResourceException(
+                    Status.CLIENT_ERROR_BAD_REQUEST.getCode(),
+                    e,
+                    "Failed to update team in the database");
         }
     }
 

@@ -5,6 +5,9 @@ INSERT INTO run (startTimestamp) VALUES (NULL);
 
 CREATE TABLE teams (
        teamId VARCHAR(20),
+       email VARCHAR(320),
+       primaryPhone VARCHAR(30),
+       secondaryPhone VARCHAR(30),
        PRIMARY KEY(teamId)
 );
 
