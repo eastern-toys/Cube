@@ -140,7 +140,7 @@ public class SubmissionStore {
                 List<String> statusClauses = new ArrayList<>();
                 for (SubmissionStatus status : filterOptions.getStatuses()) {
                     statusClauses.add("status = ?");
-                    parameterList.add(status);
+                    parameterList.add(status.toString());
                 }
                 whereClauses.add(String.format("(%s)", Joiner.on(" OR ").join(statusClauses)));
             }
