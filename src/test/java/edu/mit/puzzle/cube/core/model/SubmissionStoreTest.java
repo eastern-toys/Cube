@@ -44,7 +44,7 @@ public class SubmissionStoreTest {
         connectionFactory = new InMemoryConnectionFactory(
                 new StandardVisibilityStatusSet(),
                 Lists.newArrayList(TEST_TEAM_ID),
-                Lists.newArrayList(TEST_PUZZLE_ID),
+                Lists.newArrayList(Answer.create(TEST_PUZZLE_ID, "ANSWER")),
                 ImmutableList.<User>of(User.builder()
                         .setUsername("writingteamuser")
                         .setPassword("password")

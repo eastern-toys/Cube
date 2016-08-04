@@ -22,6 +22,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
@@ -52,7 +53,9 @@ public class HuntStatusStoreTest {
         connectionFactory = new InMemoryConnectionFactory(
                 visibilityStatusSet,
                 Lists.newArrayList(TEST_TEAM_ID),
-                Lists.newArrayList(TEST_PUZZLE_ID,TEST_PUZZLE_ID_2,TEST_PUZZLE_ID_3),
+                Lists.newArrayList(TEST_PUZZLE_ID,TEST_PUZZLE_ID_2,TEST_PUZZLE_ID_3).stream()
+                    .map(puzzleId -> Answer.create(puzzleId, "ANSWER"))
+                    .collect(Collectors.toList()),
                 ImmutableList.<User>of());
         clock = new AdjustableClock(Clock.fixed(Instant.now(), ZoneId.of("UTC")));
         eventProcessor = mock(EventProcessor.class);

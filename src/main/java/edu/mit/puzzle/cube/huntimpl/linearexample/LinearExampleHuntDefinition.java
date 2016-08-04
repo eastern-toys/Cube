@@ -4,7 +4,12 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
 import edu.mit.puzzle.cube.core.HuntDefinition;
-import edu.mit.puzzle.cube.core.events.*;
+import edu.mit.puzzle.cube.core.events.CompositeEventProcessor;
+import edu.mit.puzzle.cube.core.events.FullReleaseEvent;
+import edu.mit.puzzle.cube.core.events.HuntStartEvent;
+import edu.mit.puzzle.cube.core.events.SubmissionCompleteEvent;
+import edu.mit.puzzle.cube.core.events.VisibilityChangeEvent;
+import edu.mit.puzzle.cube.core.model.Answer;
 import edu.mit.puzzle.cube.core.model.HuntStatusStore;
 import edu.mit.puzzle.cube.core.model.Submission;
 import edu.mit.puzzle.cube.core.model.SubmissionStatus;
@@ -23,17 +28,17 @@ public class LinearExampleHuntDefinition implements HuntDefinition {
         return VISIBILITY_STATUS_SET;
     }
 
-    private static final List<String> PUZZLES;
+    private static final List<Answer> PUZZLES;
     static {
-        ImmutableList.Builder<String> puzzleBuilder = ImmutableList.builder();
+        ImmutableList.Builder<Answer> puzzlesBuilder = ImmutableList.builder();
         for (int i = 1; i <= 7 ; ++i) {
-            puzzleBuilder.add("puzzle" + i);
+            puzzlesBuilder.add(Answer.create("puzzle" + i, "ANSWER" + i));
         }
-        PUZZLES = puzzleBuilder.build();
+        PUZZLES = puzzlesBuilder.build();
     }
 
     @Override
-    public List<String> getPuzzleList() {
+    public List<Answer> getPuzzleList() {
         return PUZZLES;
     }
 

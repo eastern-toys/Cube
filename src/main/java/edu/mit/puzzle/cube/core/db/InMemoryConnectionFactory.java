@@ -2,6 +2,7 @@ package edu.mit.puzzle.cube.core.db;
 
 import com.google.common.collect.Lists;
 
+import edu.mit.puzzle.cube.core.model.Answer;
 import edu.mit.puzzle.cube.core.model.User;
 import edu.mit.puzzle.cube.core.model.UserStore;
 import edu.mit.puzzle.cube.core.model.VisibilityStatusSet;
@@ -64,7 +65,7 @@ public class InMemoryConnectionFactory implements ConnectionFactory {
     public InMemoryConnectionFactory(
             VisibilityStatusSet visibilityStatusSet,
             List<String> teamIdList,
-            List<String> puzzleIdList,
+            List<Answer> puzzlesList,
             List<User> userList
     ) throws SQLException {
         dataSource = new InMemorySQLiteDataSource();
@@ -74,7 +75,7 @@ public class InMemoryConnectionFactory implements ConnectionFactory {
         clear();
 
         //Boot up the initial state of tables
-        createInitialConfiguration(visibilityStatusSet, teamIdList, puzzleIdList, userList);
+        createInitialConfiguration(visibilityStatusSet, teamIdList, puzzlesList, userList);
     }
 
     @Override
@@ -93,7 +94,7 @@ public class InMemoryConnectionFactory implements ConnectionFactory {
     private void createInitialConfiguration(
             VisibilityStatusSet visibilityStatusSet,
             List<String> teamIdList,
-            List<String> puzzleIdList,
+            List<Answer> puzzlesList,
             List<User> userList
     ) {
         CubeDatabaseSchema cubeDatabaseSchema = new CubeDatabaseSchema(
@@ -113,8 +114,8 @@ public class InMemoryConnectionFactory implements ConnectionFactory {
         DatabaseHelper.insertBatch(this, insertTeamSql, parameterLists);
 
         String insertPuzzleSql = "INSERT INTO puzzles (puzzleId) VALUES (?)";
-        parameterLists = puzzleIdList.stream()
-                .map(id -> Lists.<Object>newArrayList(id))
+        parameterLists = puzzlesList.stream()
+                .map(answer -> Lists.<Object>newArrayList(answer.getPuzzleId()))
                 .collect(Collectors.toList());
         DatabaseHelper.insertBatch(this, insertPuzzleSql, parameterLists);
 

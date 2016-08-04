@@ -8,6 +8,8 @@ public interface VisibilityStatusSet {
 
     public Set<String> getAllowedStatuses();
 
+    public Set<String> getAnswerRevealedStatuses();
+
     public String getDefaultVisibilityStatus();
 
     public boolean isAllowedStatus(String status);

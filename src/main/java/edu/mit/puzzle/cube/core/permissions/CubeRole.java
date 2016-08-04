@@ -16,7 +16,8 @@ public abstract class CubeRole {
                     new UserRolesPermission("*", PermissionAction.READ),
                     new TeamsPermission("*", PermissionAction.READ),
                     new SubmissionsPermission("*", PermissionAction.READ, PermissionAction.UPDATE),
-                    new VisibilitiesPermission("*", PermissionAction.READ)
+                    new VisibilitiesPermission("*", PermissionAction.READ),
+                    new AnswersPermission()
             ));
 
     public static final String ADMIN_ROLE_NAME = "admin";
