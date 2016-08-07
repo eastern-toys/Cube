@@ -5,9 +5,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Multimaps;
 import com.google.common.collect.Table;
 
 import edu.mit.puzzle.cube.core.db.ConnectionFactory;
@@ -16,6 +17,7 @@ import edu.mit.puzzle.cube.core.events.Event;
 import edu.mit.puzzle.cube.core.events.EventProcessor;
 import edu.mit.puzzle.cube.core.events.VisibilityChangeEvent;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.restlet.data.Status;
 import org.restlet.resource.ResourceException;
 import org.slf4j.Logger;
@@ -69,33 +71,80 @@ public class HuntStatusStore {
         return this.visibilityStatusSet;
     }
 
-    public String getVisibility(String teamId, String puzzleId) {
-        return getExplicitVisibility(teamId, puzzleId).orElse(visibilityStatusSet.getDefaultVisibilityStatus());
+    public Visibility getVisibility(String teamId, String puzzleId) {
+        return getExplicitVisibility(teamId, puzzleId)
+                .orElse(Visibility.builder()
+                        .setTeamId(teamId)
+                        .setPuzzleId(puzzleId)
+                        .setStatus(visibilityStatusSet.getDefaultVisibilityStatus())
+                        .build()
+                );
     }
 
     public List<Visibility> getExplicitVisibilities(
             Optional<String> teamId,
             Optional<String> puzzleId
     ) {
-        String query = "SELECT teamId, puzzleId, status FROM visibilities";
+        String whereClause = "";
         List<Object> parameters = Lists.newArrayList();
         if (teamId.isPresent() && puzzleId.isPresent()) {
-            query += " WHERE teamId = ? AND puzzleId = ?";
+            whereClause = " WHERE teamId = ? AND puzzleId = ?";
             parameters.add(teamId.get());
             parameters.add(puzzleId.get());
         } else if (teamId.isPresent()) {
-            query += " WHERE teamId = ?";
+            whereClause = " WHERE teamId = ?";
             parameters.add(teamId.get());
         } else if (puzzleId.isPresent()) {
-            query += " WHERE puzzleId = ?";
+            whereClause = " WHERE puzzleId = ?";
             parameters.add(puzzleId.get());
         }
 
-        return DatabaseHelper.query(connectionFactory, query, parameters, Visibility.class);
+        String visibilitiesQuery = "SELECT teamId, puzzleId, status FROM visibilities";
+        visibilitiesQuery += whereClause;
+        List<Visibility> visibilities = DatabaseHelper.query(
+                connectionFactory,
+                visibilitiesQuery,
+                parameters,
+                Visibility.class
+        );
+
+        String submissionsQuery = "SELECT teamId, puzzleId, canonicalAnswer FROM submissions";
+        if (whereClause.isEmpty()) {
+            submissionsQuery += " WHERE ";
+        } else {
+            submissionsQuery += whereClause + " AND ";
+        }
+        submissionsQuery += "canonicalAnswer IS NOT NULL";
+        List<Submission> submissions = DatabaseHelper.query(
+                connectionFactory,
+                submissionsQuery,
+                parameters,
+                Submission.class
+        );
+        ImmutableListMultimap<Object, Submission> submissionIndex = Multimaps.index(
+                submissions,
+                submission -> Pair.of(submission.getTeamId(), submission.getPuzzleId())
+        );
+
+        visibilities = visibilities.stream().map(visibility -> {
+            List<Submission> visibilitySubmissions = submissionIndex.get(
+                    Pair.of(visibility.getTeamId(), visibility.getPuzzleId()));
+            if (!visibilitySubmissions.isEmpty()) {
+                List<String> solvedAnswers = visibilitySubmissions.stream()
+                        .map(Submission::getCanonicalAnswer)
+                        .collect(Collectors.toList());
+                return visibility.toBuilder()
+                        .setSolvedAnswers(solvedAnswers)
+                        .build();
+            }
+            return visibility;
+        }).collect(Collectors.toList());
+
+        return visibilities;
     }
 
     public List<Visibility> getVisibilitiesForTeam(String teamId) {
-        return DatabaseHelper.query(
+        List<Visibility> visibilities = DatabaseHelper.query(
                 connectionFactory,
                 "SELECT " +
                 "  ? AS teamId, " +
@@ -110,6 +159,33 @@ public class HuntStatusStore {
                 Lists.newArrayList(teamId, visibilityStatusSet.getDefaultVisibilityStatus(), teamId),
                 Visibility.class
         );
+
+        String submissionsQuery = "SELECT puzzleId, canonicalAnswer FROM submissions " +
+                "WHERE teamId = ? AND canonicalAnswer IS NOT NULL";
+        List<Submission> submissions = DatabaseHelper.query(
+                connectionFactory,
+                submissionsQuery,
+                ImmutableList.of(teamId),
+                Submission.class
+        );
+        ImmutableListMultimap<String, Submission> submissionIndex = Multimaps.index(
+                submissions, Submission::getPuzzleId
+        );
+
+        visibilities = visibilities.stream().map(visibility -> {
+            List<Submission> visibilitySubmissions = submissionIndex.get(visibility.getPuzzleId());
+            if (!visibilitySubmissions.isEmpty()) {
+                List<String> solvedAnswers = visibilitySubmissions.stream()
+                        .map(Submission::getCanonicalAnswer)
+                        .collect(Collectors.toList());
+                return visibility.toBuilder()
+                        .setSolvedAnswers(solvedAnswers)
+                        .build();
+            }
+            return visibility;
+        }).collect(Collectors.toList());
+
+        return visibilities;
     }
 
     public boolean recordHuntRunStart() {
@@ -290,15 +366,11 @@ public class HuntStatusStore {
         }
     }
 
-    private Optional<String> getExplicitVisibility(String teamId, String puzzleId) {
-        Table<Integer, String, Object> resultTable = DatabaseHelper.query(
-                connectionFactory,
-                "SELECT status FROM visibilities WHERE teamId = ? AND puzzleId = ?",
-                Lists.newArrayList(teamId, puzzleId)
-        );
-        if (resultTable.rowKeySet().size() == 1) {
-            return Optional.of((String) Iterables.getOnlyElement(resultTable.rowMap().values()).get("status"));
-        } else if (resultTable.rowKeySet().size() == 0) {
+    private Optional<Visibility> getExplicitVisibility(String teamId, String puzzleId) {
+        List<Visibility> visibilities = getExplicitVisibilities(Optional.of(teamId), Optional.of(puzzleId));
+        if (visibilities.size() == 1) {
+            return Optional.of(visibilities.get(0));
+        } else if (visibilities.isEmpty()) {
             return Optional.empty();
         } else {
             throw new RuntimeException("Primary key violation in application layer");

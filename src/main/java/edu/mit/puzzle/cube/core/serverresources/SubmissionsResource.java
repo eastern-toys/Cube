@@ -7,8 +7,9 @@ import edu.mit.puzzle.cube.core.model.PostResult;
 import edu.mit.puzzle.cube.core.model.Submission;
 import edu.mit.puzzle.cube.core.model.SubmissionStatus;
 import edu.mit.puzzle.cube.core.model.SubmissionStore;
-import edu.mit.puzzle.cube.core.model.Submissions;
 import edu.mit.puzzle.cube.core.model.SubmissionStore.FilterOptions;
+import edu.mit.puzzle.cube.core.model.Submissions;
+import edu.mit.puzzle.cube.core.model.Visibility;
 import edu.mit.puzzle.cube.core.permissions.PermissionAction;
 import edu.mit.puzzle.cube.core.permissions.SubmissionsPermission;
 
@@ -72,10 +73,11 @@ public class SubmissionsResource extends AbstractCubeResource {
     public PostResult handlePost(Submission submission) {
         SecurityUtils.getSubject().checkPermission(
                 new SubmissionsPermission(submission.getTeamId(), PermissionAction.CREATE));
-        String visibilityStatus = huntStatusStore.getVisibility(
+        Visibility visibility = huntStatusStore.getVisibility(
                 submission.getTeamId(),
-                submission.getPuzzleId());
-        if (!huntStatusStore.getVisibilityStatusSet().allowsSubmissions(visibilityStatus)) {
+                submission.getPuzzleId()
+        );
+        if (!huntStatusStore.getVisibilityStatusSet().allowsSubmissions(visibility.getStatus())) {
             throw new ResourceException(
                     Status.CLIENT_ERROR_BAD_REQUEST,
                     "This submission is not allowed due to puzzle visibility");

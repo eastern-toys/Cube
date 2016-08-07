@@ -14,6 +14,7 @@ import org.restlet.data.ChallengeScheme;
 
 import java.io.IOException;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
 
 public class LinearHuntRunTest extends RestletTest {
@@ -68,11 +69,16 @@ public class LinearHuntRunTest extends RestletTest {
 
         json = getVisibility("testerteam", "puzzle1");
         assertEquals("SOLVED", json.get("status").asText());
+        assertThat(json.get("solvedAnswers").size()).isEqualTo(1);
+        assertThat(json.get("solvedAnswers").get(0).asText()).isEqualTo("ANSWER1");
+
         json = getVisibility("testerteam", "puzzle2");
         assertEquals("UNLOCKED", json.get("status").asText());
+        assertThat(json.get("solvedAnswers").size()).isEqualTo(0);
 
         json = getVisibility("testerteam", "puzzle5");
         assertEquals("INVISIBLE", json.get("status").asText());
+        assertThat(json.get("solvedAnswers").size()).isEqualTo(0);
 
         postFullRelease("puzzle5");
         json = getVisibility("testerteam", "puzzle5");

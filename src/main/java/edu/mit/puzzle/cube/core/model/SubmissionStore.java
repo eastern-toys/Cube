@@ -222,12 +222,24 @@ public class SubmissionStore {
     }
 
     public boolean setSubmissionStatus(
-            int submissionId, SubmissionStatus status, @Nullable String callerUsername) {
+            int submissionId,
+            SubmissionStatus status,
+            @Nullable String callerUsername,
+            @Nullable String canonicalAnswer
+    ) {
         boolean updated = DatabaseHelper.update(
                 connectionFactory,
-                "UPDATE submissions SET status = ?, callerUsername = ? " +
-                "WHERE submissionId = ? AND (status <> ? OR callerUsername <> ?)",
-                Lists.newArrayList(status.toString(), callerUsername, submissionId, status.toString(), callerUsername)
+                "UPDATE submissions SET status = ?, callerUsername = ?, canonicalAnswer = ? " +
+                "WHERE submissionId = ? AND (status <> ? OR callerUsername <> ? OR canonicalAnswer <> ?)",
+                Lists.newArrayList(
+                        status.toString(),
+                        callerUsername,
+                        canonicalAnswer,
+                        submissionId,
+                        status.toString(),
+                        callerUsername,
+                        canonicalAnswer
+                )
         ) > 0;
 
         if (updated && status.isTerminal()) {
@@ -239,5 +251,4 @@ public class SubmissionStore {
 
         return updated;
     }
-
 }

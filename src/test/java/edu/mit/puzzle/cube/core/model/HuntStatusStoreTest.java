@@ -64,7 +64,8 @@ public class HuntStatusStoreTest {
 
     @Test
     public void getVisibilityWithNoneSet() {
-        assertEquals(visibilityStatusSet.getDefaultVisibilityStatus(), huntStatusStore.getVisibility(TEST_TEAM_ID, TEST_PUZZLE_ID));
+        assertThat(huntStatusStore.getVisibility(TEST_TEAM_ID, TEST_PUZZLE_ID).getStatus())
+                .isEqualTo(visibilityStatusSet.getDefaultVisibilityStatus());
     }
 
     @Test
@@ -72,7 +73,7 @@ public class HuntStatusStoreTest {
         boolean statusChanged = huntStatusStore.setVisibility(
                 TEST_TEAM_ID, TEST_PUZZLE_ID, "UNLOCKED", false);
         assertTrue(statusChanged);
-        assertEquals("UNLOCKED", huntStatusStore.getVisibility(TEST_TEAM_ID, TEST_PUZZLE_ID));
+        assertEquals("UNLOCKED", huntStatusStore.getVisibility(TEST_TEAM_ID, TEST_PUZZLE_ID).getStatus());
 
         List<VisibilityChange> history = huntStatusStore.getVisibilityHistory(TEST_TEAM_ID, TEST_PUZZLE_ID);
         assertEquals(1, history.size());
@@ -85,11 +86,11 @@ public class HuntStatusStoreTest {
     @Test
     public void setVisibilityToSameStatus() {
         huntStatusStore.setVisibility(TEST_TEAM_ID, TEST_PUZZLE_ID, "UNLOCKED", false);
-        assertEquals("UNLOCKED", huntStatusStore.getVisibility(TEST_TEAM_ID, TEST_PUZZLE_ID));
+        assertEquals("UNLOCKED", huntStatusStore.getVisibility(TEST_TEAM_ID, TEST_PUZZLE_ID).getStatus());
 
         boolean statusChanged = huntStatusStore.setVisibility(TEST_TEAM_ID, TEST_PUZZLE_ID, "UNLOCKED", false);
         assertFalse(statusChanged);
-        assertEquals("UNLOCKED", huntStatusStore.getVisibility(TEST_TEAM_ID, TEST_PUZZLE_ID));
+        assertEquals("UNLOCKED", huntStatusStore.getVisibility(TEST_TEAM_ID, TEST_PUZZLE_ID).getStatus());
 
         List<VisibilityChange> history = huntStatusStore.getVisibilityHistory(TEST_TEAM_ID, TEST_PUZZLE_ID);
         assertEquals(1, history.size());
@@ -105,7 +106,7 @@ public class HuntStatusStoreTest {
                 visibilityStatusSet.getDefaultVisibilityStatus(), false);
         assertFalse(statusChanged);
         assertEquals(visibilityStatusSet.getDefaultVisibilityStatus(),
-                huntStatusStore.getVisibility(TEST_TEAM_ID, TEST_PUZZLE_ID));
+                huntStatusStore.getVisibility(TEST_TEAM_ID, TEST_PUZZLE_ID).getStatus());
 
         List<VisibilityChange> history = huntStatusStore.getVisibilityHistory(TEST_TEAM_ID, TEST_PUZZLE_ID);
         assertEquals(0, history.size());
@@ -119,7 +120,7 @@ public class HuntStatusStoreTest {
                 TEST_TEAM_ID, TEST_PUZZLE_ID, "SOLVED", false);
         assertFalse(statusChanged);
         assertEquals(visibilityStatusSet.getDefaultVisibilityStatus(),
-                huntStatusStore.getVisibility(TEST_TEAM_ID, TEST_PUZZLE_ID));
+                huntStatusStore.getVisibility(TEST_TEAM_ID, TEST_PUZZLE_ID).getStatus());
 
         List<VisibilityChange> history = huntStatusStore.getVisibilityHistory(
                 TEST_TEAM_ID, TEST_PUZZLE_ID);
@@ -133,7 +134,7 @@ public class HuntStatusStoreTest {
         boolean statusChanged = huntStatusStore.setVisibility(
                 TEST_TEAM_ID, TEST_PUZZLE_ID, "UNLOCKED", false);
         assertTrue(statusChanged);
-        assertEquals("UNLOCKED", huntStatusStore.getVisibility(TEST_TEAM_ID, TEST_PUZZLE_ID));
+        assertEquals("UNLOCKED", huntStatusStore.getVisibility(TEST_TEAM_ID, TEST_PUZZLE_ID).getStatus());
         Instant firstTimestamp = clock.instant();
 
         clock.setWrappedClock(Clock.fixed(clock.instant().plus(5, ChronoUnit.MINUTES), ZoneId.of("UTC")));
@@ -142,7 +143,7 @@ public class HuntStatusStoreTest {
         statusChanged = huntStatusStore.setVisibility(
                 TEST_TEAM_ID, TEST_PUZZLE_ID, "SOLVED", false);
         assertTrue(statusChanged);
-        assertEquals("SOLVED", huntStatusStore.getVisibility(TEST_TEAM_ID, TEST_PUZZLE_ID));
+        assertEquals("SOLVED", huntStatusStore.getVisibility(TEST_TEAM_ID, TEST_PUZZLE_ID).getStatus());
 
         List<VisibilityChange> history = huntStatusStore.getVisibilityHistory(TEST_TEAM_ID, TEST_PUZZLE_ID);
         assertEquals(2, history.size());
