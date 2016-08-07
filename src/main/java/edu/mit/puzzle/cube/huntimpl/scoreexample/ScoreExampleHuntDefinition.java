@@ -17,6 +17,7 @@ import edu.mit.puzzle.cube.core.events.SubmissionCompleteEvent;
 import edu.mit.puzzle.cube.core.events.VisibilityChangeEvent;
 import edu.mit.puzzle.cube.core.model.Answer;
 import edu.mit.puzzle.cube.core.model.HuntStatusStore;
+import edu.mit.puzzle.cube.core.model.Puzzle;
 import edu.mit.puzzle.cube.core.model.Run;
 import edu.mit.puzzle.cube.core.model.Submission;
 import edu.mit.puzzle.cube.core.model.SubmissionStatus;
@@ -35,18 +36,23 @@ public class ScoreExampleHuntDefinition implements HuntDefinition {
 
     private static final VisibilityStatusSet VISIBILITY_STATUS_SET = new StandardVisibilityStatusSet();
     private static final Map<String,PuzzleInfo> PUZZLE_INFO_MAP;
-    private static final List<Answer> PUZZLE_ANSWERS;
+    private static final List<Puzzle> PUZZLES;
     static {
         ImmutableMap.Builder<String,PuzzleInfo> puzzleInfoBuilder = ImmutableMap.builder();
-        ImmutableList.Builder<Answer> puzzleAnswersBuilder = ImmutableList.builder();
+        ImmutableList.Builder<Puzzle> puzzlesBuilder = ImmutableList.builder();
         for (int i = 1; i <= 7; ++i) {
             int reward = 25;
             int prereq = (i-1) * 20;
             puzzleInfoBuilder.put("puzzle" + i, new PuzzleInfo(reward, prereq));
-            puzzleAnswersBuilder.add(Answer.create("puzzle" + i, "ANSWER" + i));
+            puzzlesBuilder.add(Puzzle.builder()
+                    .setPuzzleId("puzzle" + i)
+                    .setDisplayName("Puzzle " + i)
+                    .setAnswers(Answer.createSingle("ANSWER" + i))
+                    .build()
+            );
         }
         PUZZLE_INFO_MAP = puzzleInfoBuilder.build();
-        PUZZLE_ANSWERS = puzzleAnswersBuilder.build();
+        PUZZLES = puzzlesBuilder.build();
     }
 
     private static class PuzzleInfo {
@@ -78,8 +84,8 @@ public class ScoreExampleHuntDefinition implements HuntDefinition {
     }
 
     @Override
-    public List<Answer> getPuzzleList() {
-        return PUZZLE_ANSWERS;
+    public List<Puzzle> getPuzzles() {
+        return PUZZLES;
     }
 
     @Override

@@ -18,11 +18,6 @@ public class StandardVisibilityStatusSet implements VisibilityStatusSet {
     }
 
     @Override
-    public Set<String> getAnswerRevealedStatuses() {
-        return ImmutableSet.of("SOLVED");
-    }
-
-    @Override
     public String getDefaultVisibilityStatus() {
         return "INVISIBLE";
     }

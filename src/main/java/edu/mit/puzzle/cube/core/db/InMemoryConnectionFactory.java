@@ -2,7 +2,7 @@ package edu.mit.puzzle.cube.core.db;
 
 import com.google.common.collect.Lists;
 
-import edu.mit.puzzle.cube.core.model.Answer;
+import edu.mit.puzzle.cube.core.model.Puzzle;
 import edu.mit.puzzle.cube.core.model.User;
 import edu.mit.puzzle.cube.core.model.UserStore;
 import edu.mit.puzzle.cube.core.model.VisibilityStatusSet;
@@ -65,7 +65,7 @@ public class InMemoryConnectionFactory implements ConnectionFactory {
     public InMemoryConnectionFactory(
             VisibilityStatusSet visibilityStatusSet,
             List<String> teamIdList,
-            List<Answer> puzzlesList,
+            List<Puzzle> puzzlesList,
             List<User> userList
     ) throws SQLException {
         dataSource = new InMemorySQLiteDataSource();
@@ -94,7 +94,7 @@ public class InMemoryConnectionFactory implements ConnectionFactory {
     private void createInitialConfiguration(
             VisibilityStatusSet visibilityStatusSet,
             List<String> teamIdList,
-            List<Answer> puzzlesList,
+            List<Puzzle> puzzlesList,
             List<User> userList
     ) {
         CubeDatabaseSchema cubeDatabaseSchema = new CubeDatabaseSchema(
@@ -115,7 +115,7 @@ public class InMemoryConnectionFactory implements ConnectionFactory {
 
         String insertPuzzleSql = "INSERT INTO puzzles (puzzleId) VALUES (?)";
         parameterLists = puzzlesList.stream()
-                .map(answer -> Lists.<Object>newArrayList(answer.getPuzzleId()))
+                .map(puzzle -> Lists.<Object>newArrayList(puzzle.getPuzzleId()))
                 .collect(Collectors.toList());
         DatabaseHelper.insertBatch(this, insertPuzzleSql, parameterLists);
 

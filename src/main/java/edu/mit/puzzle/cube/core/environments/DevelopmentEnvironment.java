@@ -49,7 +49,7 @@ public class DevelopmentEnvironment implements ServiceEnvironment {
             this.inMemoryConnectionFactory = new InMemoryConnectionFactory(
                     huntDefinition.getVisibilityStatusSet(),
                     teamIdList,
-                    huntDefinition.getPuzzleList(),
+                    huntDefinition.getPuzzles(),
                     userList
             );
         } catch (SQLException e) {

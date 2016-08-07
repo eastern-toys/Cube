@@ -10,7 +10,7 @@ import edu.mit.puzzle.cube.core.environments.ProductionEnvironment;
 import edu.mit.puzzle.cube.core.environments.ServiceEnvironment;
 import edu.mit.puzzle.cube.core.events.CompositeEventProcessor;
 import edu.mit.puzzle.cube.core.events.PeriodicTimerEvent;
-import edu.mit.puzzle.cube.core.model.AnswerStore;
+import edu.mit.puzzle.cube.core.model.PuzzleStore;
 import edu.mit.puzzle.cube.core.model.HuntStatusStore;
 import edu.mit.puzzle.cube.core.model.SubmissionStore;
 import edu.mit.puzzle.cube.core.model.UserStore;
@@ -37,7 +37,7 @@ public class CubeApplication extends Application {
     private final SubmissionStore submissionStore;
     private final HuntStatusStore huntStatusStore;
     private final UserStore userStore;
-    private final AnswerStore answerStore;
+    private final PuzzleStore puzzleStore;
     private final CompositeEventProcessor eventProcessor;
 
     private final Service timingEventService;
@@ -83,8 +83,8 @@ public class CubeApplication extends Application {
         userStore = new UserStore(
                 connectionFactory
         );
-        answerStore = new AnswerStore(
-                huntDefinition.getPuzzleList()
+        puzzleStore = new PuzzleStore(
+                huntDefinition.getPuzzles()
         );
 
         huntDefinition.addToEventProcessor(
@@ -132,7 +132,7 @@ public class CubeApplication extends Application {
         getContext().getAttributes().put(AbstractCubeResource.SUBMISSION_STORE_KEY, submissionStore);
         getContext().getAttributes().put(AbstractCubeResource.HUNT_STATUS_STORE_KEY, huntStatusStore);
         getContext().getAttributes().put(AbstractCubeResource.USER_STORE_KEY, userStore);
-        getContext().getAttributes().put(AbstractCubeResource.ANSWER_STORE_KEY, answerStore);
+        getContext().getAttributes().put(AbstractCubeResource.PUZZLE_STORE_KEY, puzzleStore);
         getContext().getAttributes().put(AbstractCubeResource.EVENT_PROCESSOR_KEY, eventProcessor);
 
         return new CubeRestlet(getContext());

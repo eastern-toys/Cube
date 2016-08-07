@@ -22,9 +22,9 @@ public class CubeRestlet extends Filter {
         super(context);
 
         Router router = new Router(context);
-        router.attach("/answer/{id}", AnswerResource.class);
         router.attach("/authorized", AuthorizedResource.class);
         router.attach("/events", EventsResource.class);
+        router.attach("/puzzle/{id}", PuzzleResource.class);
         router.attach("/submissions", SubmissionsResource.class);
         router.attach("/submissions/{id}", SubmissionResource.class);
         router.attach("/teams", TeamsResource.class);

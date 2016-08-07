@@ -11,6 +11,7 @@ import edu.mit.puzzle.cube.core.events.SubmissionCompleteEvent;
 import edu.mit.puzzle.cube.core.events.VisibilityChangeEvent;
 import edu.mit.puzzle.cube.core.model.Answer;
 import edu.mit.puzzle.cube.core.model.HuntStatusStore;
+import edu.mit.puzzle.cube.core.model.Puzzle;
 import edu.mit.puzzle.cube.core.model.Submission;
 import edu.mit.puzzle.cube.core.model.SubmissionStatus;
 import edu.mit.puzzle.cube.core.model.VisibilityStatusSet;
@@ -28,17 +29,22 @@ public class LinearExampleHuntDefinition implements HuntDefinition {
         return VISIBILITY_STATUS_SET;
     }
 
-    private static final List<Answer> PUZZLES;
+    private static final List<Puzzle> PUZZLES;
     static {
-        ImmutableList.Builder<Answer> puzzlesBuilder = ImmutableList.builder();
+        ImmutableList.Builder<Puzzle> puzzlesBuilder = ImmutableList.builder();
         for (int i = 1; i <= 7 ; ++i) {
-            puzzlesBuilder.add(Answer.create("puzzle" + i, "ANSWER" + i));
+            puzzlesBuilder.add(Puzzle.builder()
+                    .setPuzzleId("puzzle" + i)
+                    .setDisplayName("Puzzle " + i)
+                    .setAnswers(Answer.createSingle("ANSWER" + i))
+                    .build()
+            );
         }
         PUZZLES = puzzlesBuilder.build();
     }
 
     @Override
-    public List<Answer> getPuzzleList() {
+    public List<Puzzle> getPuzzles() {
         return PUZZLES;
     }
 

@@ -7,8 +7,8 @@ import edu.mit.puzzle.cube.core.HuntDefinition;
 import edu.mit.puzzle.cube.core.RestletTest;
 import edu.mit.puzzle.cube.core.db.CubeJdbcRealm;
 import edu.mit.puzzle.cube.core.events.CompositeEventProcessor;
-import edu.mit.puzzle.cube.core.model.Answer;
 import edu.mit.puzzle.cube.core.model.HuntStatusStore;
+import edu.mit.puzzle.cube.core.model.Puzzle;
 import edu.mit.puzzle.cube.core.model.VisibilityStatusSet;
 import edu.mit.puzzle.cube.modules.model.StandardVisibilityStatusSet;
 
@@ -22,7 +22,7 @@ import java.util.List;
 
 import static com.google.common.truth.Truth.assertThat;
 
-public class AnswerTest extends RestletTest {
+public class PuzzleTest extends RestletTest {
     private static final String PUZZLE_ONE = "puzzle1";
     private static final String PUZZLE_TWO = "puzzle2";
 
@@ -49,10 +49,10 @@ public class AnswerTest extends RestletTest {
             }
 
             @Override
-            public List<Answer> getPuzzleList() {
+            public List<Puzzle> getPuzzles() {
                 return ImmutableList.of(
-                        Answer.create(PUZZLE_ONE, ANSWER_ONE),
-                        Answer.create(PUZZLE_TWO, ANSWER_TWO)
+                        Puzzle.create(PUZZLE_ONE, ANSWER_ONE),
+                        Puzzle.create(PUZZLE_TWO, ANSWER_TWO)
                 );
             }
 
@@ -74,40 +74,28 @@ public class AnswerTest extends RestletTest {
     }
 
     @Test
-    public void testGetAnswer() {
+    public void testGetPuzzle() {
         setCurrentUserCredentials(WRITING_USER);
 
-        getExpectFailure("/answer/badpuzzleid");
+        getExpectFailure("/puzzle/badpuzzleid");
 
-        JsonNode answerJson = get("/answer/" + PUZZLE_ONE);
-        assertThat(answerJson.get("puzzleId").asText()).isEqualTo(PUZZLE_ONE);
-        assertThat(answerJson.get("canonicalAnswers").size()).isEqualTo(1);
-        assertThat(answerJson.get("canonicalAnswers").get(0).asText()).isEqualTo(ANSWER_ONE);
+        JsonNode puzzleJson = get("/puzzle/" + PUZZLE_ONE);
+        assertThat(puzzleJson.get("puzzleId").asText()).isEqualTo(PUZZLE_ONE);
+        assertThat(puzzleJson.get("answers").size()).isEqualTo(1);
+        JsonNode answerJson = puzzleJson.get("answers").get(0);
+        assertThat(answerJson.get("canonicalAnswer").asText()).isEqualTo(ANSWER_ONE);
         assertThat(answerJson.get("acceptableAnswers").size()).isEqualTo(1);
         assertThat(answerJson.get("acceptableAnswers").get(0).asText()).isEqualTo(ANSWER_ONE);
 
-        answerJson = get("/answer/" + PUZZLE_TWO);
-        assertThat(answerJson.get("puzzleId").asText()).isEqualTo(PUZZLE_TWO);
-        assertThat(answerJson.get("canonicalAnswers").size()).isEqualTo(1);
-        assertThat(answerJson.get("canonicalAnswers").get(0).asText()).isEqualTo(ANSWER_TWO);
+        puzzleJson = get("/puzzle/" + PUZZLE_TWO);
+        assertThat(puzzleJson.get("puzzleId").asText()).isEqualTo(PUZZLE_TWO);
+        assertThat(puzzleJson.get("answers").size()).isEqualTo(1);
+        answerJson = puzzleJson.get("answers").get(0);
+        assertThat(answerJson.get("canonicalAnswer").asText()).isEqualTo(ANSWER_TWO);
         assertThat(answerJson.get("acceptableAnswers").size()).isEqualTo(1);
         assertThat(answerJson.get("acceptableAnswers").get(0).asText()).isEqualTo(ANSWER_TWO);
 
         setCurrentUserCredentials(TEAM);
         getExpectFailure("/answer/" + PUZZLE_ONE);
-
-        setCurrentUserCredentials(ADMIN_CREDENTIALS);
-        postVisibility("team", PUZZLE_ONE, "SOLVED");
-
-        setCurrentUserCredentials(TEAM);
-
-        answerJson = get("/answer/" + PUZZLE_ONE);
-        assertThat(answerJson.get("puzzleId").asText()).isEqualTo(PUZZLE_ONE);
-        assertThat(answerJson.get("canonicalAnswers").size()).isEqualTo(1);
-        assertThat(answerJson.get("canonicalAnswers").get(0).asText()).isEqualTo(ANSWER_ONE);
-        assertThat(answerJson.get("acceptableAnswers").size()).isEqualTo(1);
-        assertThat(answerJson.get("acceptableAnswers").get(0).asText()).isEqualTo(ANSWER_ONE);
-
-        getExpectFailure("/answer/" + PUZZLE_TWO);
     }
 }

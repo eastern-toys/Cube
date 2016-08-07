@@ -12,7 +12,7 @@ import edu.mit.puzzle.cube.core.HuntDefinition;
 import edu.mit.puzzle.cube.core.db.CubeDatabaseSchema;
 import edu.mit.puzzle.cube.core.environments.ProductionEnvironment;
 import edu.mit.puzzle.cube.core.environments.ServiceEnvironment;
-import edu.mit.puzzle.cube.core.model.Answer;
+import edu.mit.puzzle.cube.core.model.Puzzle;
 import edu.mit.puzzle.cube.core.model.User;
 import edu.mit.puzzle.cube.core.model.UserStore;
 
@@ -70,8 +70,8 @@ public class CubeTool {
                         PreparedStatement insertPuzzleStatement = connection.prepareStatement(
                                 "INSERT INTO puzzles (puzzleId) VALUES (?)")
                 ) {
-                    for (Answer answer : huntDefinition.getPuzzleList()) {
-                        insertPuzzleStatement.setString(1, answer.getPuzzleId());
+                    for (Puzzle puzzle : huntDefinition.getPuzzles()) {
+                        insertPuzzleStatement.setString(1, puzzle.getPuzzleId());
                         insertPuzzleStatement.executeUpdate();
                     }
                 }

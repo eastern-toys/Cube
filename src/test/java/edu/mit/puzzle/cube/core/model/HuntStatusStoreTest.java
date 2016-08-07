@@ -54,7 +54,7 @@ public class HuntStatusStoreTest {
                 visibilityStatusSet,
                 Lists.newArrayList(TEST_TEAM_ID),
                 Lists.newArrayList(TEST_PUZZLE_ID,TEST_PUZZLE_ID_2,TEST_PUZZLE_ID_3).stream()
-                    .map(puzzleId -> Answer.create(puzzleId, "ANSWER"))
+                    .map(puzzleId -> Puzzle.create(puzzleId, "ANSWER"))
                     .collect(Collectors.toList()),
                 ImmutableList.<User>of());
         clock = new AdjustableClock(Clock.fixed(Instant.now(), ZoneId.of("UTC")));
