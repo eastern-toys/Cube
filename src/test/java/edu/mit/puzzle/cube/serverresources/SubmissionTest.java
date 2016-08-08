@@ -7,6 +7,7 @@ import edu.mit.puzzle.cube.core.RestletTest;
 import edu.mit.puzzle.cube.core.db.CubeJdbcRealm;
 import edu.mit.puzzle.cube.core.events.CompositeEventProcessor;
 import edu.mit.puzzle.cube.core.model.HuntStatusStore;
+import edu.mit.puzzle.cube.core.model.Puzzle;
 import edu.mit.puzzle.cube.core.model.SubmissionStatus;
 import edu.mit.puzzle.cube.core.model.VisibilityStatusSet;
 import edu.mit.puzzle.cube.modules.model.StandardVisibilityStatusSet;
@@ -44,8 +45,8 @@ public class SubmissionTest extends RestletTest {
             }
 
             @Override
-            public List<String> getPuzzleList() {
-                return ImmutableList.<String>of(PUZZLE_ID);
+            public List<Puzzle> getPuzzles() {
+                return ImmutableList.of(Puzzle.create(PUZZLE_ID, "ANSWER"));
             }
 
             @Override

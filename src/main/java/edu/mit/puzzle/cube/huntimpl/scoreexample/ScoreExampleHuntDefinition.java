@@ -3,8 +3,8 @@ package edu.mit.puzzle.cube.huntimpl.scoreexample;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.auto.value.AutoValue;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
 
 import edu.mit.puzzle.cube.core.HuntDefinition;
 import edu.mit.puzzle.cube.core.events.CompositeEventProcessor;
@@ -15,7 +15,9 @@ import edu.mit.puzzle.cube.core.events.HuntStartEvent;
 import edu.mit.puzzle.cube.core.events.PeriodicTimerEvent;
 import edu.mit.puzzle.cube.core.events.SubmissionCompleteEvent;
 import edu.mit.puzzle.cube.core.events.VisibilityChangeEvent;
+import edu.mit.puzzle.cube.core.model.Answer;
 import edu.mit.puzzle.cube.core.model.HuntStatusStore;
+import edu.mit.puzzle.cube.core.model.Puzzle;
 import edu.mit.puzzle.cube.core.model.Run;
 import edu.mit.puzzle.cube.core.model.Submission;
 import edu.mit.puzzle.cube.core.model.SubmissionStatus;
@@ -34,14 +36,23 @@ public class ScoreExampleHuntDefinition implements HuntDefinition {
 
     private static final VisibilityStatusSet VISIBILITY_STATUS_SET = new StandardVisibilityStatusSet();
     private static final Map<String,PuzzleInfo> PUZZLE_INFO_MAP;
+    private static final List<Puzzle> PUZZLES;
     static {
         ImmutableMap.Builder<String,PuzzleInfo> puzzleInfoBuilder = ImmutableMap.builder();
+        ImmutableList.Builder<Puzzle> puzzlesBuilder = ImmutableList.builder();
         for (int i = 1; i <= 7; ++i) {
             int reward = 25;
             int prereq = (i-1) * 20;
             puzzleInfoBuilder.put("puzzle" + i, new PuzzleInfo(reward, prereq));
+            puzzlesBuilder.add(Puzzle.builder()
+                    .setPuzzleId("puzzle" + i)
+                    .setDisplayName("Puzzle " + i)
+                    .setAnswers(Answer.createSingle("ANSWER" + i))
+                    .build()
+            );
         }
         PUZZLE_INFO_MAP = puzzleInfoBuilder.build();
+        PUZZLES = puzzlesBuilder.build();
     }
 
     private static class PuzzleInfo {
@@ -73,8 +84,8 @@ public class ScoreExampleHuntDefinition implements HuntDefinition {
     }
 
     @Override
-    public List<String> getPuzzleList() {
-        return Lists.newArrayList(PUZZLE_INFO_MAP.keySet());
+    public List<Puzzle> getPuzzles() {
+        return PUZZLES;
     }
 
     @Override

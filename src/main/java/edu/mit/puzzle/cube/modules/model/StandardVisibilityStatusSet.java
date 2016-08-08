@@ -1,10 +1,9 @@
 package edu.mit.puzzle.cube.modules.model;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+
 import edu.mit.puzzle.cube.core.model.VisibilityStatusSet;
 
-import java.util.List;
 import java.util.Set;
 
 public class StandardVisibilityStatusSet implements VisibilityStatusSet {

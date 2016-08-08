@@ -1,7 +1,9 @@
 package edu.mit.puzzle.cube.core.serverresources;
 
 import edu.mit.puzzle.cube.core.model.PostResult;
+import edu.mit.puzzle.cube.core.model.Puzzle;
 import edu.mit.puzzle.cube.core.model.Submission;
+import edu.mit.puzzle.cube.core.model.SubmissionStatus;
 import edu.mit.puzzle.cube.core.permissions.PermissionAction;
 import edu.mit.puzzle.cube.core.permissions.SubmissionsPermission;
 
@@ -88,8 +90,24 @@ public class SubmissionResource extends AbstractCubeResource {
             callerUsername = currentUsername;
         }
 
+        String canonicalAnswer = null;
+        if (submission.getStatus().equals(SubmissionStatus.CORRECT)) {
+            if (submission.getCanonicalAnswer() != null) {
+                canonicalAnswer = submission.getCanonicalAnswer();
+            } else {
+                Puzzle puzzle = puzzleStore.getPuzzle(existingSubmission.get().getPuzzleId());
+                if (puzzle.getAnswers().size() == 1) {
+                    canonicalAnswer = puzzle.getAnswers().get(0).getCanonicalAnswer();
+                } else {
+                    // TODO: consider requiring the caller to provide a canonical answer, and
+                    // fail this request in this case.
+                    canonicalAnswer = submission.getSubmission();
+                }
+            }
+        }
+
         boolean changed = submissionStore.setSubmissionStatus(
-                id, submission.getStatus(), callerUsername);
+                id, submission.getStatus(), callerUsername, canonicalAnswer);
         return PostResult.builder().setUpdated(changed).build();
     }
 }

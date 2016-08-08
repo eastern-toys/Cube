@@ -33,7 +33,7 @@ public class UserStoreTest {
         connectionFactory = new InMemoryConnectionFactory(
                 new StandardVisibilityStatusSet(),
                 Lists.newArrayList(TEST_TEAM_ID),
-                Lists.newArrayList(TEST_PUZZLE_ID),
+                Lists.newArrayList(Puzzle.create(TEST_PUZZLE_ID, "ANSWER")),
                 ImmutableList.<User>of());
         userStore = new UserStore(connectionFactory);
     }

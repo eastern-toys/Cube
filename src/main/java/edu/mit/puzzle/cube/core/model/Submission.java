@@ -14,14 +14,14 @@ import javax.annotation.Nullable;
 public abstract class Submission {
     @AutoValue.Builder
     public static abstract class Builder {
-        @Nullable @JsonProperty("submissionId") public abstract Builder setSubmissionId(Integer submissionId);
-        @Nullable @JsonProperty("teamId") public abstract Builder setTeamId(String teamId);
-        @Nullable @JsonProperty("puzzleId") public abstract Builder setPuzzleId(String puzzleId);
-        @Nullable @JsonProperty("submission") public abstract Builder setSubmission(String submission);
-        @Nullable @JsonProperty("status") public abstract Builder setStatus(SubmissionStatus status);
-        @Nullable @JsonProperty("callerUsername") public abstract Builder setCallerUsername(String callerUsername);
+        @JsonProperty("submissionId") public abstract Builder setSubmissionId(Integer submissionId);
+        @JsonProperty("teamId") public abstract Builder setTeamId(String teamId);
+        @JsonProperty("puzzleId") public abstract Builder setPuzzleId(String puzzleId);
+        @JsonProperty("submission") public abstract Builder setSubmission(String submission);
+        @JsonProperty("status") public abstract Builder setStatus(SubmissionStatus status);
+        @JsonProperty("callerUsername") public abstract Builder setCallerUsername(String callerUsername);
+        @JsonProperty("canonicalAnswer") public abstract Builder setCanonicalAnswer(String canonicalAnswer);
 
-        @Nullable
         @JsonProperty("timestamp")
         @JsonDeserialize(using=InstantDeserializer.class)
         public abstract Builder setTimestamp(Instant timestamp);
@@ -39,6 +39,7 @@ public abstract class Submission {
     @Nullable @JsonProperty("submission") public abstract String getSubmission();
     @Nullable @JsonProperty("status") public abstract SubmissionStatus getStatus();
     @Nullable @JsonProperty("callerUsername") public abstract String getCallerUsername();
+    @Nullable @JsonProperty("canonicalAnswer") public abstract String getCanonicalAnswer();
 
     @Nullable
     @JsonProperty("timestamp")

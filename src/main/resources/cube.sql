@@ -65,6 +65,7 @@ CREATE TABLE submissions (
        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
        status VARCHAR(10) DEFAULT 'SUBMITTED',
        callerUsername VARCHAR(40),
+       canonicalAnswer TEXT,
        PRIMARY KEY(submissionId),
        FOREIGN KEY(teamId) REFERENCES teams(teamId),
        FOREIGN KEY(puzzleId) REFERENCES puzzles(puzzleId),

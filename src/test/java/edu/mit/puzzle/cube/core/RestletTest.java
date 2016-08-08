@@ -10,6 +10,8 @@ import edu.mit.puzzle.cube.core.environments.DevelopmentEnvironment;
 import edu.mit.puzzle.cube.core.environments.ServiceEnvironment;
 import edu.mit.puzzle.cube.core.events.CompositeEventProcessor;
 import edu.mit.puzzle.cube.core.model.HuntStatusStore;
+import edu.mit.puzzle.cube.core.model.Puzzle;
+import edu.mit.puzzle.cube.core.model.PuzzleStore;
 import edu.mit.puzzle.cube.core.model.SubmissionStore;
 import edu.mit.puzzle.cube.core.model.Team;
 import edu.mit.puzzle.cube.core.model.User;
@@ -91,9 +93,13 @@ public abstract class RestletTest {
         UserStore userStore = new UserStore(
                 connectionFactory
         );
+        PuzzleStore answerStore = new PuzzleStore(
+                huntDefinition.getPuzzles()
+        );
 
         huntDefinition.addToEventProcessor(eventProcessor, huntStatusStore);
 
+        context.getAttributes().put(AbstractCubeResource.PUZZLE_STORE_KEY, answerStore);
         context.getAttributes().put(AbstractCubeResource.EVENT_PROCESSOR_KEY, eventProcessor);
         context.getAttributes().put(AbstractCubeResource.HUNT_STATUS_STORE_KEY, huntStatusStore);
         context.getAttributes().put(AbstractCubeResource.SUBMISSION_STORE_KEY, submissionStore);
@@ -131,8 +137,8 @@ public abstract class RestletTest {
             }
 
             @Override
-            public List<String> getPuzzleList() {
-                return ImmutableList.<String>of();
+            public List<Puzzle> getPuzzles() {
+                return ImmutableList.<Puzzle>of();
             }
 
             @Override
@@ -194,6 +200,14 @@ public abstract class RestletTest {
         Response response = restlet.handle(request);
         assertEquals(Status.SUCCESS_OK.getCode(), response.getStatus().getCode());
         return convertResponseToJson(response);
+    }
+
+    protected Status getExpectFailure(String url) {
+        Request request = new Request(Method.GET, url);
+        request.setChallengeResponse(currentUserCredentials);
+        Response response = restlet.handle(request);
+        assertNotEquals(Status.SUCCESS_OK.getCode(), response.getStatus().getCode());
+        return response.getStatus();
     }
 
     protected JsonNode post(String url, Object body) {

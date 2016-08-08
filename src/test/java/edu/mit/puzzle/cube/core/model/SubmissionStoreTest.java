@@ -44,7 +44,7 @@ public class SubmissionStoreTest {
         connectionFactory = new InMemoryConnectionFactory(
                 new StandardVisibilityStatusSet(),
                 Lists.newArrayList(TEST_TEAM_ID),
-                Lists.newArrayList(TEST_PUZZLE_ID),
+                Lists.newArrayList(Puzzle.create(TEST_PUZZLE_ID, "ANSWER")),
                 ImmutableList.<User>of(User.builder()
                         .setUsername("writingteamuser")
                         .setPassword("password")
@@ -135,7 +135,7 @@ public class SubmissionStoreTest {
                 SubmissionStatus.ASSIGNED
         )).hasSize(0);
 
-        submissionStore.setSubmissionStatus(1, SubmissionStatus.ASSIGNED, "writingteamuser");
+        submissionStore.setSubmissionStatus(1, SubmissionStatus.ASSIGNED, "writingteamuser", null);
         submission = submissionStore.getSubmission(1).get();
         assertEquals(SubmissionStatus.ASSIGNED, submission.getStatus());
         assertEquals("writingteamuser", submission.getCallerUsername());
@@ -151,7 +151,7 @@ public class SubmissionStoreTest {
         verifyZeroInteractions(eventProcessor);
 
         //Unassign
-        submissionStore.setSubmissionStatus(1, SubmissionStatus.SUBMITTED, null);
+        submissionStore.setSubmissionStatus(1, SubmissionStatus.SUBMITTED, null, null);
         submission = submissionStore.getSubmission(1).get();
         assertEquals(SubmissionStatus.SUBMITTED, submission.getStatus());
         assertEquals(null, submission.getCallerUsername());
@@ -167,7 +167,7 @@ public class SubmissionStoreTest {
         verifyZeroInteractions(eventProcessor);
 
         //Reassign
-        submissionStore.setSubmissionStatus(1, SubmissionStatus.ASSIGNED, "writingteamuser");
+        submissionStore.setSubmissionStatus(1, SubmissionStatus.ASSIGNED, "writingteamuser", null);
         submission = submissionStore.getSubmission(1).get();
         assertEquals(SubmissionStatus.ASSIGNED, submission.getStatus());
         assertEquals("writingteamuser", submission.getCallerUsername());
@@ -182,7 +182,7 @@ public class SubmissionStoreTest {
 
         verifyZeroInteractions(eventProcessor);
 
-        submissionStore.setSubmissionStatus(1, SubmissionStatus.CORRECT, "writingteamuser");
+        submissionStore.setSubmissionStatus(1, SubmissionStatus.CORRECT, "writingteamuser", "ANSWER");
         submission = submissionStore.getSubmission(1).get();
         assertEquals(SubmissionStatus.CORRECT, submission.getStatus());
         assertEquals("writingteamuser", submission.getCallerUsername());

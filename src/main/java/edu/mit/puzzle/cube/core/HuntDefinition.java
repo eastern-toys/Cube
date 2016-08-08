@@ -2,6 +2,7 @@ package edu.mit.puzzle.cube.core;
 
 import edu.mit.puzzle.cube.core.events.CompositeEventProcessor;
 import edu.mit.puzzle.cube.core.model.HuntStatusStore;
+import edu.mit.puzzle.cube.core.model.Puzzle;
 import edu.mit.puzzle.cube.core.model.VisibilityStatusSet;
 
 import org.slf4j.Logger;
@@ -12,7 +13,7 @@ import java.util.List;
 public interface HuntDefinition {
     VisibilityStatusSet getVisibilityStatusSet();
 
-    List<String> getPuzzleList();
+    List<Puzzle> getPuzzles();
 
     void addToEventProcessor(
             CompositeEventProcessor eventProcessor,
