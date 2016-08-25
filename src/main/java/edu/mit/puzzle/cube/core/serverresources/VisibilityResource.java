@@ -35,7 +35,11 @@ public class VisibilityResource extends AbstractCubeResource {
         String puzzleId = getPuzzleId();
         SecurityUtils.getSubject().checkPermission(
                 new VisibilitiesPermission(teamId, PermissionAction.READ));
-        return huntStatusStore.getVisibility(teamId, puzzleId);
+        Visibility visibility = huntStatusStore.getVisibility(teamId, puzzleId);
+        visibility = visibility.toBuilder()
+                .setPuzzleDisplayName(puzzleStore.getPuzzle(visibility.getPuzzleId()).getDisplayName())
+                .build();
+        return visibility;
     }
 
     @Post

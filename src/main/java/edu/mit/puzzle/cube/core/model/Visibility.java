@@ -16,6 +16,7 @@ public abstract class Visibility {
     public static abstract class Builder {
         @JsonProperty("teamId") public abstract Builder setTeamId(String teamId);
         @JsonProperty("puzzleId") public abstract Builder setPuzzleId(String puzzleId);
+        @JsonProperty("puzzleDisplayName") public abstract Builder setPuzzleDisplayName(@Nullable String puzzleDisplayName);
         @JsonProperty("status") public abstract Builder setStatus(String status);
         @JsonProperty("solvedAnswers") public abstract Builder setSolvedAnswers(List<String> solvedAnswers);
 
@@ -39,6 +40,7 @@ public abstract class Visibility {
 
     @JsonProperty("teamId") public abstract String getTeamId();
     @JsonProperty("puzzleId") public abstract String getPuzzleId();
+    @Nullable @JsonProperty("puzzleDisplayName") public abstract String getPuzzleDisplayName();
     @JsonProperty("status") public abstract String getStatus();
     @Nullable @JsonProperty("solvedAnswers") public abstract List<String> getSolvedAnswers();
 }
