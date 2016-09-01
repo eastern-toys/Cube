@@ -9,15 +9,7 @@ import edu.mit.puzzle.cube.core.db.ConnectionFactory;
 import edu.mit.puzzle.cube.core.environments.DevelopmentEnvironment;
 import edu.mit.puzzle.cube.core.environments.ServiceEnvironment;
 import edu.mit.puzzle.cube.core.events.CompositeEventProcessor;
-import edu.mit.puzzle.cube.core.model.HuntStatusStore;
-import edu.mit.puzzle.cube.core.model.Puzzle;
-import edu.mit.puzzle.cube.core.model.PuzzleStore;
-import edu.mit.puzzle.cube.core.model.SubmissionStore;
-import edu.mit.puzzle.cube.core.model.Team;
-import edu.mit.puzzle.cube.core.model.User;
-import edu.mit.puzzle.cube.core.model.UserStore;
-import edu.mit.puzzle.cube.core.model.Visibility;
-import edu.mit.puzzle.cube.core.model.VisibilityStatusSet;
+import edu.mit.puzzle.cube.core.model.*;
 import edu.mit.puzzle.cube.core.permissions.CubeRole;
 import edu.mit.puzzle.cube.core.serverresources.AbstractCubeResource;
 import edu.mit.puzzle.cube.modules.model.StandardVisibilityStatusSet;
@@ -93,14 +85,18 @@ public abstract class RestletTest {
         UserStore userStore = new UserStore(
                 connectionFactory
         );
-        PuzzleStore answerStore = new PuzzleStore(
+        PuzzleStore puzzleStore = new PuzzleStore(
                 huntDefinition.getPuzzles()
+        );
+        HintRequestStore hintRequestStore = new HintRequestStore(
+                connectionFactory
         );
 
         huntDefinition.addToEventProcessor(eventProcessor, huntStatusStore);
 
-        context.getAttributes().put(AbstractCubeResource.PUZZLE_STORE_KEY, answerStore);
+        context.getAttributes().put(AbstractCubeResource.PUZZLE_STORE_KEY, puzzleStore);
         context.getAttributes().put(AbstractCubeResource.EVENT_PROCESSOR_KEY, eventProcessor);
+        context.getAttributes().put(AbstractCubeResource.HINT_REQUEST_STORE_KEY, hintRequestStore);
         context.getAttributes().put(AbstractCubeResource.HUNT_STATUS_STORE_KEY, huntStatusStore);
         context.getAttributes().put(AbstractCubeResource.SUBMISSION_STORE_KEY, submissionStore);
         context.getAttributes().put(AbstractCubeResource.USER_STORE_KEY, userStore);
@@ -226,6 +222,15 @@ public abstract class RestletTest {
         Response response = restlet.handle(request);
         assertEquals(Status.SUCCESS_OK.getCode(), response.getStatus().getCode());
         return convertResponseToJson(response);
+    }
+
+    protected Status postExpectFailure(String url, Object body) {
+        try {
+            return postExpectFailure(url, MAPPER.writer().writeValueAsString(body));
+        } catch (JsonProcessingException e) {
+            fail("Failed to convert Java object to JSON for POST");
+            throw new RuntimeException(e);
+        }
     }
 
     protected Status postExpectFailure(String url, String body) {
