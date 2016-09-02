@@ -17,6 +17,7 @@ public abstract class CubeRole {
                     new TeamsPermission("*", PermissionAction.READ),
                     new SubmissionsPermission("*", PermissionAction.READ, PermissionAction.UPDATE),
                     new VisibilitiesPermission("*", PermissionAction.READ),
+                    new HintsPermission("*", PermissionAction.READ, PermissionAction.UPDATE),
                     new AnswersPermission()
             ));
 

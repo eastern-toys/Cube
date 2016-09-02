@@ -89,5 +89,20 @@ CREATE TABLE visibility_history (
        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
        PRIMARY KEY(visibilityHistoryId),
        FOREIGN KEY(teamId) REFERENCES teams(teamId),
-       FOREIGN KEY(puzzleId) REFERENCES puzzles(puzzleId)       
+       FOREIGN KEY(puzzleId) REFERENCES puzzles(puzzleId)
+);
+
+CREATE TABLE hint_requests (
+       hintRequestId ${auto_increment_type},
+       teamId VARCHAR(20),
+       puzzleId VARCHAR(40),
+       status VARCHAR(10) DEFAULT 'REQUESTED',
+       timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+       request TEXT,
+       response TEXT,
+       callerUsername VARCHAR(40),
+       PRIMARY KEY(hintRequestId),
+       FOREIGN KEY(teamId) REFERENCES teams(teamId),
+       FOREIGN KEY(puzzleId) REFERENCES puzzles(puzzleId),
+       FOREIGN KEY(callerUsername) REFERENCES users(username)
 );
