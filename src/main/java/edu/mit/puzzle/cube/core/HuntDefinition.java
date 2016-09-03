@@ -1,6 +1,7 @@
 package edu.mit.puzzle.cube.core;
 
 import edu.mit.puzzle.cube.core.events.CompositeEventProcessor;
+import edu.mit.puzzle.cube.core.model.HintRequest;
 import edu.mit.puzzle.cube.core.model.HuntStatusStore;
 import edu.mit.puzzle.cube.core.model.Puzzle;
 import edu.mit.puzzle.cube.core.model.VisibilityStatusSet;
@@ -18,6 +19,17 @@ public interface HuntDefinition {
     void addToEventProcessor(
             CompositeEventProcessor eventProcessor,
             HuntStatusStore huntStatusStore);
+
+    /**
+     * @return true if this team may currently request a hint for this puzzle. Hunt definitions may
+     * override this to implement behaviors such as:<p><ul>
+     * <li>charging currency for this hint (amount may vary based on puzzle id and hunt state)
+     * <li>only allowing hints for a subset of puzzles
+     * </ul>
+     */
+    default boolean handleHintRequest(HintRequest hintRequest, HuntStatusStore huntStatusStore) {
+        return true;
+    }
 
     static HuntDefinition forClassName(String className) {
         final Logger LOGGER = LoggerFactory.getLogger(HuntDefinition.class);
