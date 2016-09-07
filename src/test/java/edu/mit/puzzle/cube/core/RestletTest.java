@@ -89,7 +89,10 @@ public abstract class RestletTest {
                 huntDefinition.getPuzzles()
         );
         HintRequestStore hintRequestStore = new HintRequestStore(
-                connectionFactory
+                connectionFactory,
+                huntDefinition,
+                huntStatusStore,
+                eventProcessor
         );
 
         huntDefinition.addToEventProcessor(eventProcessor, huntStatusStore);

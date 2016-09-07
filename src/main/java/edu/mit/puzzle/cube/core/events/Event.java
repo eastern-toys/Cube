@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 @JsonTypeInfo(use=JsonTypeInfo.Id.NAME, include=JsonTypeInfo.As.PROPERTY, property="eventType")
 @JsonSubTypes({
     @JsonSubTypes.Type(FullReleaseEvent.class),
+    @JsonSubTypes.Type(HintCompleteEvent.class),
     @JsonSubTypes.Type(HuntStartEvent.class),
     @JsonSubTypes.Type(PeriodicTimerEvent.class),
     @JsonSubTypes.Type(SubmissionCompleteEvent.class),

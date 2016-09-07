@@ -89,7 +89,10 @@ public class CubeApplication extends Application {
                 huntDefinition.getPuzzles()
         );
         hintRequestStore = new HintRequestStore(
-                connectionFactory
+                connectionFactory,
+                huntDefinition,
+                huntStatusStore,
+                eventProcessor
         );
 
         huntDefinition.addToEventProcessor(

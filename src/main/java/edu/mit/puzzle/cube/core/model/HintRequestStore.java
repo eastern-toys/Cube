@@ -3,8 +3,12 @@ package edu.mit.puzzle.cube.core.model;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
+import edu.mit.puzzle.cube.core.HuntDefinition;
 import edu.mit.puzzle.cube.core.db.ConnectionFactory;
 import edu.mit.puzzle.cube.core.db.DatabaseHelper;
+import edu.mit.puzzle.cube.core.events.Event;
+import edu.mit.puzzle.cube.core.events.EventProcessor;
+import edu.mit.puzzle.cube.core.events.HintCompleteEvent;
 
 import java.sql.Timestamp;
 import java.time.Clock;
@@ -15,16 +19,28 @@ import javax.annotation.Nullable;
 
 public class HintRequestStore {
     private final ConnectionFactory connectionFactory;
+    private final HuntDefinition huntDefinition;
+    private final HuntStatusStore huntStatusStore;
+    private final EventProcessor<Event> eventProcessor;
     private final Clock clock;
 
     public HintRequestStore(
-            ConnectionFactory connectionFactory
+            ConnectionFactory connectionFactory,
+            HuntDefinition huntDefinition,
+            HuntStatusStore huntStatusStore,
+            EventProcessor<Event> eventProcessor
     ) {
         this.connectionFactory = connectionFactory;
         this.clock = Clock.systemUTC();
+        this.huntDefinition = huntDefinition;
+        this.huntStatusStore = huntStatusStore;
+        this.eventProcessor = eventProcessor;
     }
 
     public boolean createHintRequest(HintRequest hintRequest) {
+        if (!huntDefinition.handleHintRequest(hintRequest, huntStatusStore)) {
+            return false;
+        }
         return DatabaseHelper.insert(
                 connectionFactory,
                 "INSERT INTO hint_requests (puzzleId, teamId, request, timestamp) " +
@@ -57,6 +73,13 @@ public class HintRequestStore {
                         response
                 )
         ) > 0;
+
+        if (updated && status.isTerminal()) {
+            HintRequest hintRequest = getHintRequest(hintRequestId).get();
+            eventProcessor.process(HintCompleteEvent.builder()
+                    .setHintRequest(hintRequest)
+                    .build());
+        }
 
         return updated;
     }

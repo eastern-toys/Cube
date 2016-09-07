@@ -43,6 +43,8 @@ public abstract class JdbcConnectionFactory implements ConnectionFactory {
             dataSource.setUsername(getUsername());
             dataSource.setPassword(getPassword());
 
+            dataSource.setDefaultTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
+
             if (getDriverClassName().equals("org.sqlite.JDBC")) {
                 dataSource.addConnectionProperty("foreign_keys", "true");
             }

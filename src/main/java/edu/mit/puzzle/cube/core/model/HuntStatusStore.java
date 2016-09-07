@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Clock;
@@ -34,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -325,6 +327,57 @@ public class HuntStatusStore {
                 Lists.newArrayList(propertyValue, teamId, propertyKey)
         );
         return updates > 0;
+    }
+
+    public <P extends Team.Property> boolean mutateTeamProperty(
+            String teamId,
+            Class<P> propertyClass,
+            Function<P, P> mutator) {
+        String propertyKey = propertyClass.getSimpleName();
+        int retryCount = 0;
+        while (true) {
+            try (
+                    Connection connection = connectionFactory.getConnection();
+                    PreparedStatement getPropertyStatement = connection.prepareStatement(
+                            "SELECT propertyValue FROM team_properties WHERE teamId = ? AND propertyKey = ?");
+                    PreparedStatement updatePropertyStatement = connection.prepareStatement(
+                            "UPDATE team_properties SET propertyValue = ? WHERE teamId = ? AND propertyKey = ?")
+            ) {
+                connection.setAutoCommit(false);
+
+                getPropertyStatement.setString(1, teamId);
+                getPropertyStatement.setString(2, propertyKey);
+                ResultSet resultSet = getPropertyStatement.executeQuery();
+                if (!resultSet.next()) {
+                    throw new RuntimeException("failed to read team property from database");
+                }
+                P property = new ObjectMapper().readValue(resultSet.getString(1), propertyClass);
+
+                P mutatedProperty = mutator.apply(property);
+                String mutatedPropertyJson = new ObjectMapper().writeValueAsString(mutatedProperty);
+
+                updatePropertyStatement.setString(1, mutatedPropertyJson);
+                updatePropertyStatement.setString(2, teamId);
+                updatePropertyStatement.setString(3, propertyKey);
+                boolean updated = updatePropertyStatement.executeUpdate() > 0;
+
+                connection.commit();
+
+                return updated;
+            } catch (SQLException e) {
+                // 40001 is the SQLSTATE error for a serialization failure.
+                if (e.getSQLState().equals("40001")) {
+                    ++retryCount;
+                    if (retryCount > 3) {
+                        throw new RuntimeException(e);
+                    }
+                } else {
+                    throw new RuntimeException(e);
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     public void addTeam(Team team) {
