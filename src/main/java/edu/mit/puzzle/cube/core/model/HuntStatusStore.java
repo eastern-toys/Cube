@@ -2,6 +2,7 @@ package edu.mit.puzzle.cube.core.model;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
@@ -41,8 +42,10 @@ import java.util.stream.Collectors;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class HuntStatusStore {
-
     private static Logger LOGGER = LoggerFactory.getLogger(HuntStatusStore.class);
+
+    private static ObjectMapper OBJECT_MAPPER = new ObjectMapper()
+            .registerModule(new GuavaModule());
 
     private final ConnectionFactory connectionFactory;
     private final Clock clock;
@@ -241,7 +244,7 @@ public class HuntStatusStore {
             String value = (String) rowMap.get("propertyValue");
             Class<? extends Team.Property> propertyClass = Team.Property.getClass(key);
             try {
-                Team.Property property = new ObjectMapper().readValue(value, propertyClass);
+                Team.Property property = OBJECT_MAPPER.readValue(value, propertyClass);
                 teamProperties.put(key, property);
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -306,7 +309,7 @@ public class HuntStatusStore {
                 propertyKey);
         String propertyValue;
         try {
-            propertyValue = new ObjectMapper().writeValueAsString(property);
+            propertyValue = OBJECT_MAPPER.writeValueAsString(property);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
@@ -351,10 +354,10 @@ public class HuntStatusStore {
                 if (!resultSet.next()) {
                     throw new RuntimeException("failed to read team property from database");
                 }
-                P property = new ObjectMapper().readValue(resultSet.getString(1), propertyClass);
+                P property = OBJECT_MAPPER.readValue(resultSet.getString(1), propertyClass);
 
                 P mutatedProperty = mutator.apply(property);
-                String mutatedPropertyJson = new ObjectMapper().writeValueAsString(mutatedProperty);
+                String mutatedPropertyJson = OBJECT_MAPPER.writeValueAsString(mutatedProperty);
 
                 updatePropertyStatement.setString(1, mutatedPropertyJson);
                 updatePropertyStatement.setString(2, teamId);
