@@ -448,15 +448,48 @@ public class HuntStatusStore {
             String status,
             boolean isExternallyInitiated
     ) {
+        Optional<VisibilityChangeEvent> changeEvent = setSingleVisibility(
+                teamId, puzzleId, status, isExternallyInitiated);
+        if (changeEvent.isPresent()) {
+            eventProcessor.process(changeEvent.get());
+            return true;
+        }
+        return false;
+    }
+
+    public boolean setVisibilityBatch(
+            Table<String,String,String> teamPuzzleStatusTable,
+            boolean isExternallyInitiated
+    ) {
+        List<VisibilityChangeEvent> changeEvents =
+            teamPuzzleStatusTable.cellSet().stream()
+                .map(teamPuzzleStatusTableCell -> setSingleVisibility(
+                        teamPuzzleStatusTableCell.getRowKey(),
+                        teamPuzzleStatusTableCell.getColumnKey(),
+                        teamPuzzleStatusTableCell.getValue(),
+                        isExternallyInitiated))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.toList());
+        eventProcessor.processBatch(changeEvents);
+        return !changeEvents.isEmpty();
+    }
+
+    private Optional<VisibilityChangeEvent> setSingleVisibility(
+            String teamId,
+            String puzzleId,
+            String status,
+            boolean isExternallyInitiated
+    ) {
         if (!visibilityStatusSet.isAllowedStatus(status)) {
-            return false;
+            return Optional.empty();
         }
         //Create with default status if necessary first
         createExplicitDefaultVisibility(teamId, puzzleId);
 
         Set<String> allowedCurrentStatuses = visibilityStatusSet.getAllowedAntecedents(status);
         if (allowedCurrentStatuses.isEmpty()) {
-            return false;
+            return Optional.empty();
         }
 
         String preparedUpdateSql = "UPDATE visibilities SET status = ? " +
@@ -482,18 +515,15 @@ public class HuntStatusStore {
                     "INSERT INTO visibility_history (teamId, puzzleId, status, timestamp) VALUES (?, ?, ?, ?)",
                     Lists.newArrayList(teamId, puzzleId, status, Timestamp.from(clock.instant())));
 
-            VisibilityChangeEvent changeEvent = VisibilityChangeEvent.builder()
+            return Optional.of(VisibilityChangeEvent.builder()
                     .setVisibility(Visibility.builder()
                             .setTeamId(teamId)
                             .setPuzzleId(puzzleId)
                             .setStatus(status)
                             .build())
-                    .build();
-            eventProcessor.process(changeEvent);
-
-            return true;
+                    .build());
         } else {
-            return false;
+            return Optional.empty();
         }
 
     }

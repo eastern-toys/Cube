@@ -3,6 +3,7 @@ package edu.mit.puzzle.cube.huntimpl.linearexample;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
+import com.google.common.collect.ImmutableTable;
 import edu.mit.puzzle.cube.core.HuntDefinition;
 import edu.mit.puzzle.cube.core.events.CompositeEventProcessor;
 import edu.mit.puzzle.cube.core.events.FullReleaseEvent;
@@ -88,9 +89,11 @@ public class LinearExampleHuntDefinition implements HuntDefinition {
         eventProcessor.addEventProcessor(HuntStartEvent.class, event -> {
             boolean changed = huntStatusStore.recordHuntRunStart();
             if (changed) {
-                for (String teamId : huntStatusStore.getTeamIds()) {
-                    huntStatusStore.setVisibility(teamId, "puzzle1", "UNLOCKED", false);
-                }
+                ImmutableTable.Builder<String,String,String> visibilityUpdateBatchBuilder =
+                        ImmutableTable.builder();
+                huntStatusStore.getTeamIds().forEach(teamId ->
+                        visibilityUpdateBatchBuilder.put(teamId, "puzzle1", "UNLOCKED"));
+                huntStatusStore.setVisibilityBatch(visibilityUpdateBatchBuilder.build(), false);
             }
         });
 

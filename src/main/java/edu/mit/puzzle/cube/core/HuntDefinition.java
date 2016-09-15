@@ -16,6 +16,15 @@ public interface HuntDefinition {
 
     List<Puzzle> getPuzzles();
 
+    /**
+     * @return A newly constructed CompositeEventProcessor appropriate to the HuntDefinition.
+     * Hunt definitions may override this in order to implement processBatch more efficiently
+     * that the default implementation in EventProcessor.
+     */
+    default CompositeEventProcessor generateCompositeEventProcessor() {
+        return new CompositeEventProcessor();
+    }
+
     void addToEventProcessor(
             CompositeEventProcessor eventProcessor,
             HuntStatusStore huntStatusStore);
