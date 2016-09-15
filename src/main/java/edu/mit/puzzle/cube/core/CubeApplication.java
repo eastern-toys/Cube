@@ -72,7 +72,7 @@ public class CubeApplication extends Application {
 
         setupAuthentication(connectionFactory);
 
-        eventProcessor = new CompositeEventProcessor();
+        eventProcessor = huntDefinition.generateCompositeEventProcessor();
         submissionStore = new SubmissionStore(
                 connectionFactory,
                 eventProcessor

@@ -72,7 +72,7 @@ public abstract class RestletTest {
         serviceEnvironment = new DevelopmentEnvironment(huntDefinition);
         ConnectionFactory connectionFactory = serviceEnvironment.getConnectionFactory();
 
-        CompositeEventProcessor eventProcessor = new CompositeEventProcessor();
+        CompositeEventProcessor eventProcessor = huntDefinition.generateCompositeEventProcessor();
         HuntStatusStore huntStatusStore = new HuntStatusStore(
                 connectionFactory,
                 huntDefinition.getVisibilityStatusSet(),
